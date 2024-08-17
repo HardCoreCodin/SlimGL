@@ -9,7 +9,6 @@ struct HUDLine {
     enum ColorID value_color = BrightGrey;
     enum ColorID alternate_value_color = Grey;
     bool *use_alternate = nullptr;
-    bool invert_alternate_use = false;
 
     HUDLine(enum ColorID default_color = BrightGrey) :
             title{},
@@ -17,38 +16,36 @@ struct HUDLine {
             value{},
             title_color{default_color},
             value_color{default_color} {}
-    HUDLine(char* title_char_ptr,
+    HUDLine(const char* title,
             enum ColorID default_color = BrightGrey) :
-            title{title_char_ptr},
+            title{title},
             alternate_value{},
             value{},
             title_color{default_color},
             value_color{default_color} {}
-    HUDLine(char* title_char_ptr,
-            char* value_char_ptr,
+    HUDLine(const char* title,
+            const char* value,
             enum ColorID default_color = BrightGrey) :
-                    title{title_char_ptr},
+                    title{title},
                     alternate_value{},
-                    value{value_char_ptr},
+                    value{value},
                     title_color{default_color},
                     alternate_value_color{default_color}
                     {}
-    HUDLine(char* title_char_ptr,
-            char* value_char_ptr,
-            char* alternate_value_char_ptr,
-            bool *use_alternate = nullptr,
-            bool invert_alternate_use = false,
+    HUDLine(const char* title,
+            const char* value,
+            const char* alt_value,
+            bool *alt = nullptr,
             enum ColorID value_color = BrightGrey,
-            enum ColorID alternate_value_color = Grey,
+            enum ColorID alt_color = Grey,
             enum ColorID title_color = BrightGrey) :
-            title{title_char_ptr},
-            alternate_value{alternate_value_char_ptr},
-            value{value_char_ptr},
+            title{title},
+            alternate_value{alt_value},
+            value{value},
             title_color{title_color},
-            value_color{value_color},
-            alternate_value_color{alternate_value_color},
-            use_alternate{use_alternate},
-            invert_alternate_use{invert_alternate_use}
+            value_color{          ((alt && value_color == BrightGrey && alt_color == Grey) ? DarkYellow  : value_color)},
+            alternate_value_color{((alt && value_color == BrightGrey && alt_color == Grey) ? BrightGreen : value_color)},
+            use_alternate{alt}
     {}
 };
 

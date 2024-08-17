@@ -52,6 +52,10 @@ struct Viewport {
         frustum.projectEdge(edge, dimensions);
     }
 
+    INLINE void checkEdge(Edge &edge, Sides &from_sides, Sides &to_sides) const {
+        frustum.checkEdge(edge, camera->focal_length, dimensions.width_over_height, from_sides, to_sides);
+    }
+
     INLINE bool cullAndClipEdge(Edge &edge) const {
         return frustum.cullAndClipEdge(edge, camera->focal_length, dimensions.width_over_height);
     }

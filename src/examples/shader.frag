@@ -165,7 +165,7 @@ vec4 CalcDirectionalLight(vec4 DirectionalLightSpacePos)
 
 vec4 CalcPointLight(PointLight pLight, int shadowIndex)
 {
-	vec3 direction = FragPos - pLight.position;
+	vec3 direction = pLight.position - FragPos;
 	float distance = length(direction);
 	direction = normalize(direction);
 	
@@ -211,7 +211,7 @@ vec4 CalcSpotLights()
 	vec4 totalColour = vec4(0, 0, 0, 0);
 	for(int i = 0; i < spotLightCount; i++)
 	{		
-		totalColour += CalcSpotLight(spotLights[i], i + pointLightCount);
+		totalColour += CalcSpotLight(spotLights[i], i + MAX_POINT_LIGHTS);
 	}
 	
 	return totalColour;

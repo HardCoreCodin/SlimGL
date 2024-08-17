@@ -5,11 +5,9 @@
 struct mat2 {
     vec2 X, Y;
 
-    static mat2 Identity;
-
     INLINE_XPU mat2() : mat2{
-            vec2{1.0f, 0.0f},
-            vec2{0.0f, 1.0f}
+        vec2{1.0f, 0.0f},
+        vec2{0.0f, 1.0f}
     } {}
     INLINE_XPU mat2(vec2i x, vec2i y) noexcept : X{x}, Y{y} {}
     INLINE_XPU mat2(vec2i x, vec2 y) noexcept : X{x}, Y{y} {}
@@ -18,6 +16,10 @@ struct mat2 {
     INLINE_XPU mat2(f32 Xx, f32 Xy, f32 Yx, f32 Yy) noexcept : X{Xx, Xy}, Y{Yx, Yy} {}
     INLINE_XPU mat2(i32 Xx, i32 Xy, i32 Yx, i32 Yy) noexcept : X{(f32)Xx, (f32)Xy}, Y{(f32)Yx, (f32)Yy} {}
     INLINE_XPU mat2(const mat2 &other) noexcept : mat2{other.X, other.Y} {}
+
+    INLINE_XPU void setToIdentity() {
+        *this = {};
+    }
 
     INLINE_XPU f32 det() const {
         return X.x*Y.y - X.y*Y.x;
@@ -37,22 +39,22 @@ struct mat2 {
 
     INLINE_XPU mat2 operator + (f32 rhs) const {
         return {
-                X.x + rhs, X.y + rhs,
-                Y.x + rhs, Y.y + rhs
+            X.x + rhs, X.y + rhs,
+            Y.x + rhs, Y.y + rhs
         };
     }
 
     INLINE_XPU mat2 operator - (f32 rhs) const {
         return {
-                X.x - rhs, X.y - rhs,
-                Y.x - rhs, Y.y - rhs
+            X.x - rhs, X.y - rhs,
+            Y.x - rhs, Y.y - rhs
         };
     }
 
     INLINE_XPU mat2 operator * (f32 rhs) const {
         return {
-                X.x * rhs, X.y * rhs,
-                Y.x * rhs, Y.y * rhs
+            X.x * rhs, X.y * rhs,
+            Y.x * rhs, Y.y * rhs
         };
     }
 
@@ -66,24 +68,24 @@ struct mat2 {
 
     INLINE_XPU mat2 operator + (const mat2 &rhs) const {
         return {
-                X.x + rhs.X.x, X.y + rhs.X.y,
-                Y.x + rhs.Y.x, Y.y + rhs.Y.y
+            X.x + rhs.X.x, X.y + rhs.X.y,
+            Y.x + rhs.Y.x, Y.y + rhs.Y.y
         };
     }
 
     INLINE_XPU mat2 operator - (const mat2 &rhs) const {
         return {
-                X.x - rhs.X.x, X.y - rhs.X.y,
-                Y.x - rhs.Y.x, Y.y - rhs.Y.y
+            X.x - rhs.X.x, X.y - rhs.X.y,
+            Y.x - rhs.Y.x, Y.y - rhs.Y.y
         };
     }
 
     INLINE_XPU mat2 operator * (const mat2 &rhs) const {
         return {
-                X.x*rhs.X.x + X.y*rhs.Y.x, // Row 1 | Column 1
-                X.x*rhs.X.y + X.y*rhs.Y.y, // Row 1 | Column 2
-                Y.x*rhs.X.x + Y.y*rhs.Y.x, // Row 2 | Column 1
-                Y.x*rhs.X.y + Y.y*rhs.Y.y  // Row 2 | Column 2
+            X.x*rhs.X.x + X.y*rhs.Y.x, // Row 1 | Column 1
+            X.x*rhs.X.y + X.y*rhs.Y.y, // Row 1 | Column 2
+            Y.x*rhs.X.x + Y.y*rhs.Y.x, // Row 2 | Column 1
+            Y.x*rhs.X.y + Y.y*rhs.Y.y  // Row 2 | Column 2
         };
     }
 
@@ -165,26 +167,25 @@ struct mat2 {
         f32 c = cos(angle);
         f32 s = sin(angle);
         return {
-                c*X.x + s*X.y, c*Y.x + s*Y.y,
-                c*X.y - s*X.x, c*Y.y - s*Y.x
+            c*X.x + s*X.y, c*Y.x + s*Y.y,
+            c*X.y - s*X.x, c*Y.y - s*Y.x
         };
     }
 
     INLINE_XPU mat2 transposed() const {
         return {
-                X.x, Y.x,
-                X.y, Y.y
+            X.x, Y.x,
+            X.y, Y.y
         };
     }
 
     INLINE_XPU mat2 inverted() const {
         return mat2{
-                Y.y, -X.y,
-                -Y.x, X.x
+            Y.y, -X.y,
+            -Y.x, X.x
         } / det();
     }
 };
-mat2 mat2::Identity = {};
 
 INLINE_XPU mat2 operator * (f32 lhs, const mat2 &rhs) {
     return rhs * lhs;

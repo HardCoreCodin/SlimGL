@@ -10,9 +10,9 @@ void drawEdge(Edge edge, const Viewport &viewport, const Color &color = White, f
     viewport.projectEdge(edge);
     drawLine(edge.from.x,
              edge.from.y,
-             edge.from.z,
+             edge.from.z - EPS,
              edge.to.x,
              edge.to.y,
-             edge.to.z,
+             edge.to.z - EPS,
              viewport.canvas, color, opacity, line_width, &viewport.bounds);
 }

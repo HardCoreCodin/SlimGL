@@ -49,13 +49,32 @@ struct GLMesh {
     template <typename Vertex = TriangleVertex>
     void create(const Mesh &mesh) {
 //        u32 edge_vertex_count = mesh.edge_count * 2;
-        u32 count = mesh.triangle_count * 3;
-        auto *vertices = new Vertex[count];
+        u32 vertex_count = mesh.triangle_count * 3;
+        auto *vertices = new Vertex[vertex_count];
 //        auto *edges = new Edge[mesh.edge_count];
         loadVertices<Vertex>(mesh, vertices);
 //        mesh.loadEdges(edges);
-
-        create(vertices, count);
+        /*
+        auto& indices = mesh.vertex_position_indices;
+        for (u32 triangle_index = 0; triangle_index < mesh.triangle_count; triangle_index++) {
+            u32 id1 = indices[triangle_index].ids[0];
+            u32 id2 = indices[triangle_index].ids[1];
+            u32 id3 = indices[triangle_index].ids[2];
+            vec3 v1 = vertices[id1].position;
+            vec3 v2 = vertices[id2].position;
+            vec3 v3 = vertices[id3].position;
+            vec3 e1 = v2 - v1;
+            vec3 e2 = v3 - v1;
+            vec3 n = e1.cross(e2).normalized();
+            vertices[id1].normal += n;
+            vertices[id2].normal += n;
+            vertices[id3].normal += n;
+        }
+        for (u32 vertex_index = 0; vertex_index < vertex_count; vertex_index++) {
+            vertices[vertex_index].normal = -vertices[vertex_index].normal.normalized();
+        }
+        */
+        create(vertices, vertex_count);
 
         delete[] vertices;
 //        delete[] edges;
@@ -63,25 +82,7 @@ struct GLMesh {
 
 //    template <typename Vertex = TriangleVertex>
     void create(TriangleVertex *vertices, u32 vertex_count, TriangleVertexIndices *indices = nullptr, u32 indices_count = 0) {
-        if (!vertices[0].normal.nonZero()) {
-            for (u32 triangle_index = 0; triangle_index < indices_count; triangle_index++) {
-                u32 id1 = indices[triangle_index].ids[0];
-                u32 id2 = indices[triangle_index].ids[1];
-                u32 id3 = indices[triangle_index].ids[2];
-                vec3 v1 = vertices[id1].position;
-                vec3 v2 = vertices[id2].position;
-                vec3 v3 = vertices[id3].position;
-                vec3 e1 = v2 - v1;
-                vec3 e2 = v3 - v1;
-                vec3 n = e1.cross(e2).normalized();
-                vertices[id1].normal += n;
-                vertices[id2].normal += n;
-                vertices[id3].normal += n;
-            }
-            for (u32 vertex_index = 0; vertex_index < vertex_count; vertex_index++) {
-                vertices[vertex_index].normal = vertices[vertex_index].normal.normalized();
-            }
-        }
+
 
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);

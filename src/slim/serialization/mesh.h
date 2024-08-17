@@ -5,8 +5,13 @@
 #include "./bvh.h"
 
 
-u32 getSizeInBytes(const Mesh &mesh) {
+u32 getSizeInBytes(const Mesh &mesh, u32 *bvh_nodes_size = nullptr) {
     u32 memory_size = getSizeInBytes(mesh.bvh);
+    if (bvh_nodes_size) {
+        *bvh_nodes_size += memory_size;
+        memory_size = 0;
+    }
+
     memory_size += sizeof(Triangle) * mesh.triangle_count;
     memory_size += sizeof(vec3) * mesh.vertex_count;
     memory_size += sizeof(TriangleVertexIndices) * mesh.triangle_count;
@@ -20,13 +25,22 @@ u32 getSizeInBytes(const Mesh &mesh) {
         memory_size += sizeof(vec3) * mesh.normals_count;
         memory_size += sizeof(TriangleVertexIndices) * mesh.triangle_count;
     }
-
+    if (mesh.tangents_count) {
+        memory_size += sizeof(vec3) * mesh.tangents_count;
+        memory_size += sizeof(TriangleVertexIndices) * mesh.triangle_count;
+    }
     return memory_size;
 }
 
-bool allocateMemory(Mesh &mesh, memory::MonotonicAllocator *memory_allocator) {
-    if (getSizeInBytes(mesh) > (memory_allocator->capacity - memory_allocator->occupied)) return false;
-    allocateMemory(mesh.bvh, memory_allocator);
+bool allocateMemory(Mesh &mesh, memory::MonotonicAllocator *memory_allocator, memory::MonotonicAllocator *memory_allocator_for_bvh_nodes = nullptr) {
+    if (memory_allocator_for_bvh_nodes) {
+        u32 bvh_nodes_size;
+        if (getSizeInBytes(mesh, &bvh_nodes_size) > (memory_allocator->capacity - memory_allocator->occupied)) return false;
+        allocateMemory(mesh.bvh, memory_allocator_for_bvh_nodes);
+    } else {
+        if (getSizeInBytes(mesh) > (memory_allocator->capacity - memory_allocator->occupied)) return false;
+        allocateMemory(mesh.bvh, memory_allocator);
+    }
     mesh.triangles               = (Triangle*             )memory_allocator->allocate(sizeof(Triangle)              * mesh.triangle_count);
     mesh.vertex_positions        = (vec3*                 )memory_allocator->allocate(sizeof(vec3)                  * mesh.vertex_count);
     mesh.vertex_position_indices = (TriangleVertexIndices*)memory_allocator->allocate(sizeof(TriangleVertexIndices) * mesh.triangle_count);
@@ -39,6 +53,10 @@ bool allocateMemory(Mesh &mesh, memory::MonotonicAllocator *memory_allocator) {
         mesh.vertex_normals          = (vec3*                 )memory_allocator->allocate(sizeof(vec3)                  * mesh.normals_count);
         mesh.vertex_normal_indices   = (TriangleVertexIndices*)memory_allocator->allocate(sizeof(TriangleVertexIndices) * mesh.triangle_count);
     }
+    if (mesh.tangents_count) {
+        mesh.vertex_tangents          = (vec3*                 )memory_allocator->allocate(sizeof(vec3)                  * mesh.tangents_count);
+        mesh.vertex_tangent_indices   = (TriangleVertexIndices*)memory_allocator->allocate(sizeof(TriangleVertexIndices) * mesh.triangle_count);
+    }
     return true;
 }
 
@@ -48,6 +66,7 @@ void writeHeader(const Mesh &mesh, void *file) {
     os::writeToFile((void*)&mesh.edge_count,     sizeof(u32),  file);
     os::writeToFile((void*)&mesh.uvs_count,      sizeof(u32),  file);
     os::writeToFile((void*)&mesh.normals_count,  sizeof(u32),  file);
+    os::writeToFile((void*)&mesh.tangents_count, sizeof(u32),  file);
     writeHeader(mesh.bvh, file);
 }
 void readHeader(Mesh &mesh, void *file) {
@@ -56,6 +75,7 @@ void readHeader(Mesh &mesh, void *file) {
     os::readFromFile(&mesh.edge_count,     sizeof(u32),  file);
     os::readFromFile(&mesh.uvs_count,      sizeof(u32),  file);
     os::readFromFile(&mesh.normals_count,  sizeof(u32),  file);
+    os::readFromFile(&mesh.tangents_count, sizeof(u32),  file);
     readHeader(mesh.bvh, file);
 }
 
@@ -90,6 +110,10 @@ void readContent(Mesh &mesh, void *file) {
         os::readFromFile(mesh.vertex_normals,                sizeof(vec3)                  * mesh.normals_count,  file);
         os::readFromFile(mesh.vertex_normal_indices,         sizeof(TriangleVertexIndices) * mesh.triangle_count, file);
     }
+    if (mesh.tangents_count) {
+        os::readFromFile(mesh.vertex_tangents,                sizeof(vec3)                  * mesh.tangents_count, file);
+        os::readFromFile(mesh.vertex_tangent_indices,         sizeof(TriangleVertexIndices) * mesh.triangle_count, file);
+    }
     readContent(mesh.bvh, file);
 }
 void writeContent(const Mesh &mesh, void *file) {
@@ -106,6 +130,10 @@ void writeContent(const Mesh &mesh, void *file) {
     if (mesh.normals_count) {
         os::writeToFile(mesh.vertex_normals,        sizeof(vec3)                  * mesh.normals_count,  file);
         os::writeToFile(mesh.vertex_normal_indices, sizeof(TriangleVertexIndices) * mesh.triangle_count, file);
+    }
+    if (mesh.tangents_count) {
+        os::writeToFile(mesh.vertex_tangents,        sizeof(vec3)                  * mesh.tangents_count,  file);
+        os::writeToFile(mesh.vertex_tangent_indices, sizeof(TriangleVertexIndices) * mesh.triangle_count, file);
     }
     writeContent(mesh.bvh, file);
 }
@@ -135,34 +163,31 @@ bool save(const Mesh &mesh, char* file_path) {
     return true;
 }
 
-bool load(Mesh &mesh, char *file_path, memory::MonotonicAllocator *memory_allocator = nullptr) {
+bool load(Mesh &mesh, char *file_path,
+          memory::MonotonicAllocator *memory_allocator = nullptr,
+          memory::MonotonicAllocator *memory_allocator_for_bvh_nodes = nullptr) {
     void *file = os::openFileForReading(file_path);
     if (!file) return false;
 
     if (memory_allocator) {
         mesh = Mesh{};
         readHeader(mesh, file);
-        if (!allocateMemory(mesh, memory_allocator)) return false;
+        if (!allocateMemory(mesh, memory_allocator, memory_allocator_for_bvh_nodes)) return false;
     } else if (!mesh.vertex_positions) return false;
     readContent(mesh, file);
     os::closeFile(file);
     return true;
 }
 
-u32 getTotalMemoryForMeshes(String *mesh_files, u32 mesh_count, u8 *max_bvh_height = nullptr, u32 *max_triangle_count = nullptr) {
+u32 getTotalMemoryForMeshes(String *mesh_files, u32 mesh_count, u32 *max_triangle_count = nullptr, u32 *bvh_nodes_size = nullptr) {
     u32 memory_size = 0;
-    if (max_bvh_height) *max_bvh_height = 0;
     if (max_triangle_count) *max_triangle_count = 0;
     for (u32 i = 0; i < mesh_count; i++) {
         Mesh mesh;
         loadHeader(mesh, mesh_files[i].char_ptr);
-        memory_size += getSizeInBytes(mesh);
-
-        if (max_bvh_height && mesh.bvh.height > *max_bvh_height) *max_bvh_height = mesh.bvh.height;
-        if (max_triangle_count && mesh.triangle_count > *max_triangle_count) *max_triangle_count = mesh.triangle_count;
+        if (max_triangle_count) *max_triangle_count = Max(*max_triangle_count, mesh.triangle_count);
+        memory_size += getSizeInBytes(mesh, bvh_nodes_size);
     }
-    if (max_bvh_height)
-        memory_size += sizeof(u32) * (*max_bvh_height + (1 << *max_bvh_height));
 
     return memory_size;
 }

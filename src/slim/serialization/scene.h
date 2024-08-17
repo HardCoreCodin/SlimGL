@@ -2,13 +2,8 @@
 
 #include "../scene/scene.h"
 
-void load(Scene &scene, char* scene_file_path = nullptr) {
-    if (scene_file_path)
-        scene.file_path = scene_file_path;
-    else
-        scene_file_path = scene.file_path.char_ptr;
-
-    void *file_handle = os::openFileForReading(scene_file_path);
+void load(Scene &scene, SceneIO &scene_io) {
+    void *file_handle = os::openFileForReading(scene_io.file_path.char_ptr);
 
     os::readFromFile(&scene.counts, sizeof(SceneCounts), file_handle);
 
@@ -29,7 +24,7 @@ void load(Scene &scene, char* scene_file_path = nullptr) {
             os::readFromFile(&camera->target_distance, sizeof(f32), file_handle);
             os::readFromFile(&camera->current_velocity, sizeof(vec3), file_handle);
             os::readFromFile(&camera->position, sizeof(vec3), file_handle);
-            os::readFromFile(&camera->rotation, sizeof(Orientation<mat3>), file_handle);
+            os::readFromFile(&camera->orientation, sizeof(OrientationUsing3x3Matrix), file_handle);
         }
     }
 
@@ -60,13 +55,8 @@ void load(Scene &scene, char* scene_file_path = nullptr) {
     os::closeFile(file_handle);
 }
 
-void save(Scene &scene, char* scene_file_path = nullptr) {
-    if (scene_file_path)
-        scene.file_path = scene_file_path;
-    else
-        scene_file_path = scene.file_path.char_ptr;
-
-    void *file_handle = os::openFileForWriting(scene_file_path);
+void save(Scene &scene, SceneIO &scene_io) {
+    void *file_handle = os::openFileForWriting(scene_io.file_path.char_ptr);
 
     os::writeToFile(&scene.counts, sizeof(SceneCounts), file_handle);
 
@@ -87,7 +77,7 @@ void save(Scene &scene, char* scene_file_path = nullptr) {
             os::writeToFile(&camera->target_distance, sizeof(f32), file_handle);
             os::writeToFile(&camera->current_velocity, sizeof(vec3), file_handle);
             os::writeToFile(&camera->position, sizeof(vec3), file_handle);
-            os::writeToFile(&camera->rotation, sizeof(Orientation<mat3>), file_handle);
+            os::writeToFile(&camera->orientation, sizeof(OrientationUsing3x3Matrix), file_handle);
         }
     }
 

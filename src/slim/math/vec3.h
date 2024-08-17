@@ -20,6 +20,14 @@ struct vec3 {
     INLINE_XPU vec3(f32 value) noexcept : vec3{value, value, value} {}
     INLINE_XPU vec3(enum ColorID color_id) noexcept : vec3{Color{color_id}} {}
     INLINE_XPU vec3(const Color &color) noexcept : vec3{color.red, color.green, color.blue} {}
+    INLINE_XPU vec3(const Sides sides) noexcept : vec3{
+        1.0f - 2.0f * (f32)sides.left,
+        1.0f - 2.0f * (f32)sides.bottom,
+        1.0f - 2.0f * (f32)sides.back
+    } {}
+    INLINE_XPU Sides facing() const {
+        return Sides{x, y, z};
+    }
 
     INLINE_XPU vec3& operator = (f32 value) {
         x = y = z = value;
@@ -47,17 +55,17 @@ struct vec3 {
 
     INLINE_XPU vec3 operator - () const {
         return {
-                -x,
-                -y,
-                -z
+            -x,
+            -y,
+            -z
         };
     }
 
     INLINE_XPU vec3 operator - (const vec3 &rhs) const {
         return {
-                x - rhs.x,
-                y - rhs.y,
-                z - rhs.z
+            x - rhs.x,
+            y - rhs.y,
+            z - rhs.z
         };
     }
 
@@ -71,17 +79,17 @@ struct vec3 {
 
     INLINE_XPU vec3 operator * (const vec3 &rhs) const {
         return {
-                x * rhs.x,
-                y * rhs.y,
-                z * rhs.z
+            x * rhs.x,
+            y * rhs.y,
+            z * rhs.z
         };
     }
 
     INLINE_XPU vec3 operator / (const vec3 &rhs) const {
         return {
-                x / rhs.x,
-                y / rhs.y,
-                z / rhs.z
+            x / rhs.x,
+            y / rhs.y,
+            z / rhs.z
         };
     }
 
@@ -115,34 +123,34 @@ struct vec3 {
 
     INLINE_XPU vec3 operator - (f32 rhs) const {
         return {
-                x - rhs,
-                y - rhs,
-                z - rhs
+            x - rhs,
+            y - rhs,
+            z - rhs
         };
     }
 
     INLINE_XPU vec3 operator + (f32 rhs) const {
         return {
-                x + rhs,
-                y + rhs,
-                z + rhs
+            x + rhs,
+            y + rhs,
+            z + rhs
         };
     }
 
     INLINE_XPU vec3 operator * (f32 rhs) const {
         return {
-                x * rhs,
-                y * rhs,
-                z * rhs
+            x * rhs,
+            y * rhs,
+            z * rhs
         };
     }
 
     INLINE_XPU vec3 operator / (f32 rhs) const {
         const f32 factor = 1.0f / rhs;
         return {
-                x * factor,
-                y * factor,
-                z * factor
+            x * factor,
+            y * factor,
+            z * factor
         };
     }
 
@@ -177,34 +185,34 @@ struct vec3 {
 
     INLINE_XPU vec3 operator - (i32 rhs) const {
         return {
-                x - (f32)rhs,
-                y - (f32)rhs,
-                z - (f32)rhs
+            x - (f32)rhs,
+            y - (f32)rhs,
+            z - (f32)rhs
         };
     }
 
     INLINE_XPU vec3 operator + (i32 rhs) const {
         return {
-                x + (f32)rhs,
-                y + (f32)rhs,
-                z + (f32)rhs
+            x + (f32)rhs,
+            y + (f32)rhs,
+            z + (f32)rhs
         };
     }
 
     INLINE_XPU vec3 operator * (i32 rhs) const {
         return {
-                x * (f32)rhs,
-                y * (f32)rhs,
-                z * (f32)rhs
+            x * (f32)rhs,
+            y * (f32)rhs,
+            z * (f32)rhs
         };
     }
 
     INLINE_XPU vec3 operator / (i32 rhs) const {
         f32 factor = 1.0f / (f32)rhs;
         return {
-                x * factor,
-                y * factor,
-                z * factor
+            x * factor,
+            y * factor,
+            z * factor
         };
     }
 
@@ -245,44 +253,40 @@ struct vec3 {
 
     INLINE_XPU vec3 perpZ() const {
         return {
-                -y,
-                x,
-                z
+            -y,
+            x,
+            z
         };
     }
 
-    INLINE_XPU f32 minimum(Axis *axis = nullptr) const {
-        if (axis) {
-            *axis = Axis_X;
-            f32 result = x;
-            if (y < result) {
-                result = y;
-                *axis = Axis_Y;
-            }
-            if (z < result) {
-                result = z;
-                *axis = Axis_Z;
-            }
-            return result;
-        } else
-            return x < y ? (x < z ? x : z) : (y < z ? y : z);
+    INLINE_XPU f32 minimum() const { return Min(x, Min(y, z)); }
+    INLINE_XPU f32 minimum(Axis &axis) const {
+        f32 result = x;
+        axis = Axis_X;
+        if (y < result) {
+            result = y;
+            axis = Axis_Y;
+        }
+        if (z < result) {
+            result = z;
+            axis = Axis_Z;
+        }
+        return result;
     }
 
-    INLINE_XPU f32 maximum(Axis *axis = nullptr) const {
-        if (axis) {
-            *axis = Axis_X;
+    INLINE_XPU f32 maximum() const { return Max(x, Max(y, z)); }
+    INLINE_XPU f32 maximum(Axis &axis) const {
             f32 result = x;
+            axis = Axis_X;
             if (y > result) {
                 result = y;
-                *axis = Axis_Y;
+                axis = Axis_Y;
             }
             if (z > result) {
                 result = z;
-                *axis = Axis_Z;
+                axis = Axis_Z;
             }
             return result;
-        } else
-            return x > y ? (x > z ? x : z) : (y > z ? y : z);
     }
 
     INLINE_XPU f32 dot(const vec3 &rhs) const {
@@ -315,41 +319,41 @@ struct vec3 {
 
     INLINE_XPU vec3 clamped() const {
         return {
-                clampedValue(x),
-                clampedValue(y),
-                clampedValue(z)
+            clampedValue(x),
+            clampedValue(y),
+            clampedValue(z)
         };
     }
 
     INLINE_XPU vec3 clamped(const vec3 &upper) const {
         return {
-                clampedValue(x, upper.x),
-                clampedValue(y, upper.y),
-                clampedValue(z, upper.z)
+            clampedValue(x, upper.x),
+            clampedValue(y, upper.y),
+            clampedValue(z, upper.z)
         };
     }
 
     INLINE_XPU vec3 clamped(const vec3 &lower, const vec3 &upper) const {
         return {
-                clampedValue(x, lower.x, upper.x),
-                clampedValue(y, lower.y, upper.y),
-                clampedValue(z, lower.z, upper.z)
+            clampedValue(x, lower.x, upper.x),
+            clampedValue(y, lower.y, upper.y),
+            clampedValue(z, lower.z, upper.z)
         };
     }
 
     INLINE_XPU vec3 clamped(const f32 min_value, const f32 max_value) const {
         return {
-                clampedValue(x, min_value, max_value),
-                clampedValue(y, min_value, max_value),
-                clampedValue(z, min_value, max_value)
+            clampedValue(x, min_value, max_value),
+            clampedValue(y, min_value, max_value),
+            clampedValue(z, min_value, max_value)
         };
     }
 
     INLINE_XPU vec3 approachTo(const vec3 &trg, f32 diff) const {
         return {
-                approach(x, trg.x, diff),
-                approach(y, trg.y, diff),
-                approach(z, trg.z, diff)
+            approach(x, trg.x, diff),
+            approach(y, trg.y, diff),
+            approach(z, trg.z, diff)
         };
     }
 
@@ -359,18 +363,32 @@ struct vec3 {
 
     INLINE_XPU vec3 scaleAdd(f32 factor, const vec3 &to_be_added) const {
         return {
-                fast_mul_add(x, factor, to_be_added.x),
-                fast_mul_add(y, factor, to_be_added.y),
-                fast_mul_add(z, factor, to_be_added.z)
+            fast_mul_add(x, factor, to_be_added.x),
+            fast_mul_add(y, factor, to_be_added.y),
+            fast_mul_add(z, factor, to_be_added.z)
+        };
+    }
+
+    INLINE_XPU vec3 scaleAdd(f32 factor, f32 to_be_added) const {
+        return {
+            fast_mul_add(x, factor, to_be_added),
+            fast_mul_add(y, factor, to_be_added),
+            fast_mul_add(z, factor, to_be_added)
         };
     }
 
     INLINE_XPU vec3 mulAdd(const vec3 &factors, const vec3 &to_be_added) const {
         return {
-                fast_mul_add(x, factors.x, to_be_added.x),
-                fast_mul_add(y, factors.y, to_be_added.y),
-                fast_mul_add(z, factors.z, to_be_added.z)
+            fast_mul_add(x, factors.x, to_be_added.x),
+            fast_mul_add(y, factors.y, to_be_added.y),
+            fast_mul_add(z, factors.z, to_be_added.z)
         };
+    }
+
+    INLINE_XPU void shiftToNormalized() {
+        x = fast_mul_add(x, 0.5f, 0.5f);
+        y = fast_mul_add(y, 0.5f, 0.5f);
+        z = fast_mul_add(z, 0.5f, 0.5f);
     }
 };
 
@@ -378,51 +396,55 @@ vec3 vec3::X{1, 0, 0};
 vec3 vec3::Y{0, 1, 0};
 vec3 vec3::Z{0, 0, 1};
 
+INLINE_XPU vec3 absolute(const vec3 &a) {
+    return {abs(a.x), abs(a.y), abs(a.z)};
+}
+
 INLINE_XPU vec3 minimum(const vec3 &a, const vec3 &b) {
     return {
-            a.x < b.x ? a.x : b.x,
-            a.y < b.y ? a.y : b.y,
-            a.z < b.z ? a.z : b.z
+        a.x < b.x ? a.x : b.x,
+        a.y < b.y ? a.y : b.y,
+        a.z < b.z ? a.z : b.z
     };
 }
 
 INLINE_XPU vec3 maximum(const vec3 &a, const vec3 &b) {
     return {
-            a.x > b.x ? a.x : b.x,
-            a.y > b.y ? a.y : b.y,
-            a.z > b.z ? a.z : b.z
+        a.x > b.x ? a.x : b.x,
+        a.y > b.y ? a.y : b.y,
+        a.z > b.z ? a.z : b.z
     };
 }
 
 INLINE_XPU vec3 operator - (f32 lhs, const vec3 &rhs) {
     return {
-            lhs - rhs.x,
-            lhs - rhs.y,
-            lhs - rhs.z
+        lhs - rhs.x,
+        lhs - rhs.y,
+        lhs - rhs.z
     };
 }
 
 INLINE_XPU vec3 operator + (f32 lhs, const vec3 &rhs) {
     return {
-            lhs + rhs.x,
-            lhs + rhs.y,
-            lhs + rhs.z
+        lhs + rhs.x,
+        lhs + rhs.y,
+        lhs + rhs.z
     };
 }
 
 INLINE_XPU vec3 operator / (f32 lhs, const vec3 &rhs) {
     return {
-            lhs / rhs.x,
-            lhs / rhs.y,
-            lhs / rhs.z
+        lhs / rhs.x,
+        lhs / rhs.y,
+        lhs / rhs.z
     };
 }
 
 INLINE_XPU vec3 operator * (f32 lhs, const vec3 &rhs) {
     return {
-            lhs * rhs.x,
-            lhs * rhs.y,
-            lhs * rhs.z
+        lhs * rhs.x,
+        lhs * rhs.y,
+        lhs * rhs.z
     };
 }
 
@@ -448,13 +470,13 @@ struct AABB {
 
     INLINE_XPU AABB operator + (const AABB &rhs) const {
         return {
-                min.x < rhs.min.x ? min.x : rhs.min.x,
-                min.y < rhs.min.y ? min.y : rhs.min.y,
-                min.z < rhs.min.z ? min.z : rhs.min.z,
+            min.x < rhs.min.x ? min.x : rhs.min.x,
+            min.y < rhs.min.y ? min.y : rhs.min.y,
+            min.z < rhs.min.z ? min.z : rhs.min.z,
 
-                max.x > rhs.max.x ? max.x : rhs.max.x,
-                max.y > rhs.max.y ? max.y : rhs.max.y,
-                max.z > rhs.max.z ? max.z : rhs.max.z,
+            max.x > rhs.max.x ? max.x : rhs.max.x,
+            max.y > rhs.max.y ? max.y : rhs.max.y,
+            max.z > rhs.max.z ? max.z : rhs.max.z,
         };
     }
 
@@ -493,18 +515,18 @@ struct AABB {
     }
 };
 
-INLINE Color vec3ToColor(const vec3 &v) {
+INLINE_XPU Color vec3ToColor(const vec3 &v) {
     return {v.r, v.g, v.b};
 }
 
-INLINE Color directionToColor(const vec3 &v) {
+INLINE_XPU Color directionToColor(const vec3 &v) {
     return {
-            fast_mul_add(v.r, 0.5f, 0.5f),
-            fast_mul_add(v.g, 0.5f, 0.5f),
-            fast_mul_add(v.b, 0.5f, 0.5f)
+        fast_mul_add(v.r, 0.5f, 0.5f),
+        fast_mul_add(v.g, 0.5f, 0.5f),
+        fast_mul_add(v.b, 0.5f, 0.5f)
     };
 }
 
-INLINE vec3 colorToVec3(const Color &color) {
+INLINE_XPU vec3 colorToVec3(const Color &color) {
     return {color.r, color.g, color.b};
 }

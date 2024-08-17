@@ -41,7 +41,7 @@ struct Navigation {
     }
 
     void orient(Camera &camera) {
-        camera.rotate(settings.speed.orient * -(f32)mouse::pos_raw_diff_y,
+        camera.orientation.rotate(settings.speed.orient * -(f32)mouse::pos_raw_diff_y,
                       settings.speed.orient * -(f32)mouse::pos_raw_diff_x);
         mouse::moved = false;
         turned = true;
@@ -64,11 +64,11 @@ struct Navigation {
         if (move.forward)  target_velocity.z += settings.max_velocity;
         if (move.backward) target_velocity.z -= settings.max_velocity;
         if (turn.left) {
-            camera.rotateAroundY(delta_time * settings.speed.turn);
+            camera.orientation.rotateAroundY(delta_time * settings.speed.turn);
             turned = true;
         }
         if (turn.right) {
-            camera.rotateAroundY(delta_time * -settings.speed.turn);
+            camera.orientation.rotateAroundY(delta_time * -settings.speed.turn);
             turned = true;
         }
 
@@ -78,7 +78,7 @@ struct Navigation {
                                        settings.acceleration * delta_time);
         vec3 movement = velocity * delta_time;
         moved = movement.nonZero();
-        if (moved) camera.position += camera.rotation * movement;
+        if (moved) camera.position += camera.orientation * movement;
     }
 
     void update(Camera &camera, f32 delta_time) {

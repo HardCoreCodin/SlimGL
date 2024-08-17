@@ -3,13 +3,21 @@
 #include "./vec3.h"
 
 struct mat3 {
-    vec3 X, Y, Z;
+    union {
+        struct {
+            vec3 X, Y, Z;
+        };
+        struct {
+            vec3 right, up, forward;
+        };
+    };
 
-    static mat3 Identity;
+    INLINE_XPU mat3() noexcept :
+        X{1.0f, 0.0f, 0.0f},
+        Y{0.0f, 1.0f, 0.0f},
+        Z{0.0f, 0.0f, 1.0f}
+        {}
 
-    INLINE_XPU mat3() noexcept : X{1.0f, 0.0f, 0.0f},
-                      Y{0.0f, 1.0f, 0.0f},
-                      Z{0.0f, 0.0f, 1.0f} {}
     INLINE_XPU mat3(vec3 X, vec3 Y, vec3 Z) noexcept : X{X}, Y{Y}, Z{Z} {}
     INLINE_XPU mat3(f32 Xx, f32 Xy, f32 Xz,
          f32 Yx, f32 Yy, f32 Yz,
@@ -19,13 +27,41 @@ struct mat3 {
             Z{Zx, Zy, Zz} {}
     INLINE_XPU mat3(const mat3 &other) noexcept : mat3{other.X, other.Y, other.Z} {}
 
+    INLINE_XPU void setToIdentity() {
+        *this = {};
+    }
+
+    INLINE_XPU void setToRotationAroundX(f32 radians) {
+        X.x = 1.0f;
+        X.y = X.z = Y.x = Z.x = 0.0f;
+        Y.y = Z.z = cos(radians);
+        Z.y = sin(radians);
+        Y.z = -Z.y;
+    }
+
+    INLINE_XPU void setToRotationAroundY(f32 radians) {
+        Y.y = 1.0f;
+        X.y = Y.x = Y.z = Z.y = 0.0f;
+        X.x = Z.z = cos(radians);
+        X.z = sin(radians);
+        Z.x = -X.z;
+    }
+
+    INLINE_XPU void setToRotationAroundZ(f32 radians) {
+        Z.z = 1.0f;
+        X.z = Z.x = Y.z = Z.y = 0.0f;
+        X.x = Y.y = cos(radians);
+        Y.x = sin(radians);
+        X.y = -Y.x;
+    }
+
     static INLINE_XPU mat3 RotationAroundX(f32 radians) {
         f32 c = cos(radians);
         f32 s = sin(radians);
         return {
-                {1, 0, 0},
-                {0, c, -s},
-                {0, s, c}
+            {1, 0, 0},
+            {0, c, -s},
+            {0, s, c}
         };
     }
 
@@ -33,9 +69,9 @@ struct mat3 {
         f32 c = cos(radians);
         f32 s = sin(radians);
         return {
-                {c, 0, s},
-                {0, 1, 0},
-                {-s, 0, c}
+            {c, 0, s},
+            {0, 1, 0},
+            {-s, 0, c}
         };
     }
 
@@ -43,9 +79,9 @@ struct mat3 {
         f32 c = cos(radians);
         f32 s = sin(radians);
         return {
-                {c, -s, 0},
-                {s, c, 0},
-                {0, 0, 1}
+            {c, s, 0},
+            {-s, c, 0},
+            {0, 0, 1}
         };
     }
 
@@ -108,9 +144,9 @@ struct mat3 {
 
     INLINE_XPU f32 det() const {
         return (
-                + X.x * (Y.y * Z.z - Z.y * Y.z)
-                - Y.x * (X.y * Z.z - Z.y * X.z)
-                + Z.x * (X.y * Y.z - Y.y * X.z)
+            + X.x * (Y.y * Z.z - Z.y * Y.z)
+            - Y.x * (X.y * Z.z - Z.y * X.z)
+            + Z.x * (X.y * Y.z - Y.y * X.z)
         );
     }
 
@@ -120,25 +156,25 @@ struct mat3 {
 
     INLINE_XPU mat3 transposed() const {
         return {
-                X.x, Y.x, Z.x,
-                X.y, Y.y, Z.y,
-                X.z, Y.z, Z.z
+            X.x, Y.x, Z.x,
+            X.y, Y.y, Z.y,
+            X.z, Y.z, Z.z
         };
     }
 
     INLINE_XPU mat3 inverted() const {
         return mat3{
-                +(Y.y * Z.z - Z.y * Y.z),
-                -(X.y * Z.z - Z.y * X.z),
-                +(X.y * Y.z - Y.y * X.z),
+            +(Y.y * Z.z - Z.y * Y.z),
+            -(X.y * Z.z - Z.y * X.z),
+            +(X.y * Y.z - Y.y * X.z),
 
-                -(Y.x * Z.z - Z.x * Y.z),
-                +(X.x * Z.z - Z.x * X.z),
-                -(X.x * Y.z - Y.x * X.z),
+            -(Y.x * Z.z - Z.x * Y.z),
+            +(X.x * Z.z - Z.x * X.z),
+            -(X.x * Y.z - Y.x * X.z),
 
-                +(Y.x * Z.y - Z.x * Y.y),
-                -(X.x * Z.y - Z.x * X.y),
-                +(X.x * Y.y - Y.x * X.y)
+            +(Y.x * Z.y - Z.x * Y.y),
+            -(X.x * Z.y - Z.x * X.y),
+            +(X.x * Y.y - Y.x * X.y)
         } / det();
     }
 
@@ -152,74 +188,74 @@ struct mat3 {
 
     INLINE_XPU mat3 operator + (f32 rhs) const {
         return {
-                X.x + rhs, X.y + rhs, X.z + rhs,
-                Y.x + rhs, Y.y + rhs, Y.z + rhs,
-                Z.x + rhs, Z.y + rhs, Z.z + rhs
+            X.x + rhs, X.y + rhs, X.z + rhs,
+            Y.x + rhs, Y.y + rhs, Y.z + rhs,
+            Z.x + rhs, Z.y + rhs, Z.z + rhs
         };
     }
 
     INLINE_XPU mat3 operator - (f32 rhs) const {
         return {
-                X.x - rhs, X.y - rhs, X.z - rhs,
-                Y.x - rhs, Y.y - rhs, Y.z - rhs,
-                Z.x - rhs, Z.y - rhs, Z.z - rhs
+            X.x - rhs, X.y - rhs, X.z - rhs,
+            Y.x - rhs, Y.y - rhs, Y.z - rhs,
+            Z.x - rhs, Z.y - rhs, Z.z - rhs
         };
     }
 
     INLINE_XPU mat3 operator * (f32 rhs) const {
         return {
-                X.x * rhs, X.y * rhs, X.z * rhs,
-                Y.x * rhs, Y.y * rhs, Y.z * rhs,
-                Z.x * rhs, Z.y * rhs, Z.z * rhs
+            X.x * rhs, X.y * rhs, X.z * rhs,
+            Y.x * rhs, Y.y * rhs, Y.z * rhs,
+            Z.x * rhs, Z.y * rhs, Z.z * rhs
         };
     }
 
     INLINE_XPU mat3 operator / (f32 rhs) const {
         f32 factor = 1.0f / rhs;
         return mat3{
-                X.x, X.y, X.z,
-                Y.x, Y.y, Y.z,
-                Z.x, Z.y, Z.z
+            X.x, X.y, X.z,
+            Y.x, Y.y, Y.z,
+            Z.x, Z.y, Z.z
         } * factor;
     }
 
     INLINE_XPU mat3 operator + (const mat3 &rhs) const {
         return {
-                X.x + rhs.X.x, X.y + rhs.X.y, X.z + rhs.X.z,
-                Y.x + rhs.Y.x, Y.y + rhs.Y.y, Y.z + rhs.Y.z,
-                Z.x + rhs.Z.x, Z.y + rhs.Z.y, Z.z + rhs.Z.z
+            X.x + rhs.X.x, X.y + rhs.X.y, X.z + rhs.X.z,
+            Y.x + rhs.Y.x, Y.y + rhs.Y.y, Y.z + rhs.Y.z,
+            Z.x + rhs.Z.x, Z.y + rhs.Z.y, Z.z + rhs.Z.z
         };
     }
 
     INLINE_XPU mat3 operator - (const mat3 &rhs) const {
         return {
-                X.x - rhs.X.x, X.y - rhs.X.y, X.z - rhs.X.z,
-                Y.x - rhs.Y.x, Y.y - rhs.Y.y, Y.z - rhs.Y.z,
-                Z.x - rhs.Z.x, Z.y - rhs.Z.y, Z.z - rhs.Z.z
+            X.x - rhs.X.x, X.y - rhs.X.y, X.z - rhs.X.z,
+            Y.x - rhs.Y.x, Y.y - rhs.Y.y, Y.z - rhs.Y.z,
+            Z.x - rhs.Z.x, Z.y - rhs.Z.y, Z.z - rhs.Z.z
         };
     }
 
     INLINE_XPU mat3 operator * (const mat3 &rhs) const {
         return {
-                X.x*rhs.X.x + X.y*rhs.Y.x + X.z*rhs.Z.x, // Row 1 | Column 1
-                X.x*rhs.X.y + X.y*rhs.Y.y + X.z*rhs.Z.y, // Row 1 | Column 2
-                X.x*rhs.X.z + X.y*rhs.Y.z + X.z*rhs.Z.z, // Row 1 | Column 3
+            X.x*rhs.X.x + X.y*rhs.Y.x + X.z*rhs.Z.x, // Row 1 | Column 1
+            X.x*rhs.X.y + X.y*rhs.Y.y + X.z*rhs.Z.y, // Row 1 | Column 2
+            X.x*rhs.X.z + X.y*rhs.Y.z + X.z*rhs.Z.z, // Row 1 | Column 3
 
-                Y.x*rhs.X.x + Y.y*rhs.Y.x + Y.z*rhs.Z.x, // Row 2 | Column 1
-                Y.x*rhs.X.y + Y.y*rhs.Y.y + Y.z*rhs.Z.y, // Row 2 | Column 2
-                Y.x*rhs.X.z + Y.y*rhs.Y.z + Y.z*rhs.Z.z, // Row 2 | Column 3
+            Y.x*rhs.X.x + Y.y*rhs.Y.x + Y.z*rhs.Z.x, // Row 2 | Column 1
+            Y.x*rhs.X.y + Y.y*rhs.Y.y + Y.z*rhs.Z.y, // Row 2 | Column 2
+            Y.x*rhs.X.z + Y.y*rhs.Y.z + Y.z*rhs.Z.z, // Row 2 | Column 3
 
-                Z.x*rhs.X.x + Z.y*rhs.Y.x + Z.z*rhs.Z.x, // Row 3 | Column 1
-                Z.x*rhs.X.y + Z.y*rhs.Y.y + Z.z*rhs.Z.y, // Row 3 | Column 2
-                Z.x*rhs.X.z + Z.y*rhs.Y.z + Z.z*rhs.Z.z, // Row 3 | Column 3
+            Z.x*rhs.X.x + Z.y*rhs.Y.x + Z.z*rhs.Z.x, // Row 3 | Column 1
+            Z.x*rhs.X.y + Z.y*rhs.Y.y + Z.z*rhs.Z.y, // Row 3 | Column 2
+            Z.x*rhs.X.z + Z.y*rhs.Y.z + Z.z*rhs.Z.z, // Row 3 | Column 3
         };
     }
 
     INLINE_XPU vec3 operator * (const vec3 &rhs) const {
         return {
-                X.x*rhs.x + Y.x*rhs.y + Z.x*rhs.z,
-                X.y*rhs.x + Y.y*rhs.y + Z.y*rhs.z,
-                X.z*rhs.x + Y.z*rhs.y + Z.z*rhs.z
+            X.x*rhs.x + Y.x*rhs.y + Z.x*rhs.z,
+            X.y*rhs.x + Y.y*rhs.y + Z.y*rhs.z,
+            X.z*rhs.x + Y.z*rhs.y + Z.z*rhs.z
         };
     }
 
@@ -275,7 +311,6 @@ struct mat3 {
         X.z *= factor; Y.z *= factor; Z.z *= factor;
     }
 };
-mat3 mat3::Identity = {};
 
 INLINE_XPU mat3 operator * (f32 lhs, const mat3 &rhs) {
     return rhs * lhs;
@@ -287,17 +322,21 @@ INLINE_XPU mat3 operator + (f32 lhs, const mat3 &rhs) {
 
 INLINE_XPU mat3 outerVec3(const vec3 &lhs, const vec3 &rhs) {
     return {
-            lhs * rhs.x,
-            lhs * rhs.y,
-            lhs * rhs.z
+        lhs * rhs.x,
+        lhs * rhs.y,
+        lhs * rhs.z
     };
 }
 
 struct OrientationUsing3x3Matrix : Orientation<mat3> {
-    vec3 &right{rotation.X};
-    vec3 &up{rotation.Y};
-    vec3 &forward{rotation.Z};
-
     INLINE_XPU OrientationUsing3x3Matrix(f32 x_radians = 0.0f, f32 y_radians = 0.0f, f32 z_radians = 0.0f) :
             Orientation<mat3>{x_radians, y_radians, z_radians} {}
+
+    INLINE_XPU OrientationUsing3x3Matrix& operator = (const mat3 &m) {
+        X = m.X;
+        Y = m.Y;
+        Z = m.Z;
+
+        return *this;
+    }
 };

@@ -8,14 +8,15 @@
 #elif defined(__GNUC__) || defined(__GNUG__)
     #define COMPILER_GCC 1
     #define COMPILER_CLANG_OR_GCC 1
+    #include <new>
 #elif defined(_MSC_VER)
     #define COMPILER_MSVC 1
 #endif
 
 #ifdef __CUDACC__
     #ifndef NDEBUG
-        #include <stdio.h>
-        #include <stdlib.h>
+        #include <stdio.H>
+        #include <stdlib.H>
         inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true) {
             if (code != cudaSuccess) {
                 fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code) , file, line);
@@ -46,14 +47,17 @@
     #endif
 
     #define checkErrors() gpuErrchk(cudaPeekAtLastError())
+    #define uploadConstant(cpu_ptr, constant)      gpuErrchk(cudaMemcpyToSymbol(constant, cpu_ptr, sizeof(constant)))
     #define uploadNto(cpu_ptr, gpu_ptr, N, offset) gpuErrchk(cudaMemcpy(&((gpu_ptr)[(offset)]), (cpu_ptr), sizeof((cpu_ptr)[0]) * (N), cudaMemcpyHostToDevice))
     #define uploadN(  cpu_ptr, gpu_ptr, N        ) gpuErrchk(cudaMemcpy(&((gpu_ptr)[0])       , (cpu_ptr), sizeof((cpu_ptr)[0]) * (N), cudaMemcpyHostToDevice))
     #define downloadN(gpu_ptr, cpu_ptr, N)         gpuErrchk(cudaMemcpy((cpu_ptr), &((gpu_ptr)[0])       , sizeof((cpu_ptr)[0]) * (N), cudaMemcpyDeviceToHost))
     #define downloadNto(gpu_ptr,cpu_ptr,N, offset) gpuErrchk(cudaMemcpy((cpu_ptr), &((gpu_ptr)[(offset)]), sizeof((cpu_ptr)[0]) * (N), cudaMemcpyDeviceToHost))
+    #define setDataOnGPU(gpu_ptr, data, N)         gpuErrchk(cudaMemset((gpu_ptr), (data),                 sizeof((gpu_ptr)[0]) * (N)))
 #else
     #ifndef XPU
         #define XPU
     #endif
+
     #ifndef INLINE
         #if (defined(SLIMMER) || !defined(NDEBUG))
             #define INLINE
@@ -99,6 +103,21 @@
     #define signbit std::signbit
 #endif
 
+//#define SLIM_EXPORT
+#ifdef SLIM_EXPORT
+    #if defined(COMPILER_CLANG)
+        #define SLIM_API __declspec(dllexport)
+    #else
+        #define SLIM_API __attribute__((visibility("default")))
+    #endif
+#else
+    #if defined(COMPILER_CLANG)
+        #define SLIM_API __declspec(dllimport)
+    #else
+        #define SLIM_API
+    #endif
+#endif
+
 typedef unsigned char      u8;
 typedef unsigned short     u16;
 typedef unsigned long int  u32;
@@ -109,6 +128,9 @@ typedef signed   long int  i32;
 typedef float  f32;
 typedef double f64;
 
+#define Max(a, b) ((a) > (b) ? (a) : (b))
+#define Min(a, b) ((a) < (b) ? (a) : (b))
+
 #ifndef CANVAS_COUNT
 #define CANVAS_COUNT 2
 #endif
@@ -116,18 +138,49 @@ typedef double f64;
 #define FONT_WIDTH 9
 #define FONT_HEIGHT 12
 
-#define PI 3.14159265358979323846
-#define TAU (2.0 * PI)
-#define SQRT2_OVER_2 0.70710678118f
+#define EPS 0.0001f
+#define HALF_SQRT2 0.70710678118f
+#define SQRT2 1.41421356237f
 #define SQRT3 1.73205080757f
+
+#define pi (3.14159265f)
+#define TAU (2.0f*pi)
+#define UNIT_SPHERE_AREA_OVER_SIX ((4.0f*pi)/6.0f)
+#define ONE_OVER_PI (1.0f/pi)
+#define ONE_OVER_TWO_PI (1.0f/TAU)
+
+#define TET_MAX (0.577350259f)
+#define TET_MIN (0.288675159f)
+
 #define COLOR_COMPONENT_TO_FLOAT 0.00392156862f
 #define FLOAT_TO_COLOR_COMPONENT 255.0f
 #define DEG_TO_RAD 0.0174533f
 
 #define MAX_COLOR_VALUE 0xFF
-#define THREE_QUARTERS_COLOR_VALUE 0xC0
-#define HALF_COLOR_VALUE 0x80
-#define QUARTER_COLOR_VALUE 0x40
+
+#define MATERIAL_IS_REFLECTIVE ((u8)1)
+#define MATERIAL_IS_REFRACTIVE ((u8)2)
+#define MATERIAL_IS_EMISSIVE ((u8)4)
+#define MATERIAL_HAS_ALBEDO_MAP ((u8)16)
+#define MATERIAL_HAS_NORMAL_MAP ((u8)32)
+
+#define GEOMETRY_IS_VISIBLE ((u8)1)
+#define GEOMETRY_IS_SHADOWING ((u8)2)
+#define GEOMETRY_IS_TRANSPARENT ((u8)4)
+
+#define TRACE_OFFSET 0.0001f
+
+#define MAX_HIT_DEPTH 4
+#define MAX_DISTANCE INFINITY
+#define MAX_TRIANGLES_PER_MESH_BVH_NODE 2
+#define MAX_OBJS_PER_SCENE_BVH_NODE 2
+#define MAX_PRIMITIVES_PER_LEAF ( \
+            MAX_TRIANGLES_PER_MESH_BVH_NODE > MAX_OBJS_PER_SCENE_BVH_NODE ? \
+            MAX_TRIANGLES_PER_MESH_BVH_NODE : MAX_OBJS_PER_SCENE_BVH_NODE   \
+)
+
+#define IOR_AIR 1.0003f
+#define IOR_GLASS 1.52f
 
 #define Kilobytes(value) ((value)*1024LL)
 #define Megabytes(value) (Kilobytes(value)*1024LL)
@@ -141,8 +194,8 @@ typedef double f64;
 #define MAX_HEIGHT 2160
 #define MAX_WINDOW_SIZE (MAX_WIDTH * MAX_HEIGHT)
 
-#define DEFAULT_WIDTH 240
-#define DEFAULT_HEIGHT 180
+#define DEFAULT_WIDTH 1920
+#define DEFAULT_HEIGHT 1080
 
 #define WINDOW_CONTENT_PIXEL_SIZE 4
 #define WINDOW_CONTENT_SIZE (MAX_WINDOW_SIZE * WINDOW_CONTENT_PIXEL_SIZE)
@@ -152,12 +205,22 @@ typedef double f64;
 #define BOX__EDGE_COUNT 12
 #define GRID__MAX_SEGMENTS 101
 
+#define TET__VERTEX_COUNT 4
+#define TET__EDGE_COUNT 6
+#define QUAD__VERTEX_COUNT 4
+#define QUAD__EDGE_COUNT 4
+
 #define CURVE_STEPS 360
 
-#define CUBE_UV_COUNT 4
+#define CUBE_QUAD_UV_COUNT 4
+#define CUBE_FLAT_UV_COUNT 14
 #define CUBE_NORMAL_COUNT 6
+#define CUBE_TANGENT_COUNT 36
 #define CUBE_VERTEX_COUNT 8
 #define CUBE_TRIANGLE_COUNT 12
+#define CUBE_TRIANGLE_EDGE_COUNT 18
+#define CUBE_QUAD_EDGE_COUNT 24
+#define CUBE_BBOX_EDGE_COUNT 12
 
 #define CAMERA_DEFAULT__FOCAL_LENGTH 2.0f
 #define CAMERA_DEFAULT__TARGET_DISTANCE 10
@@ -184,6 +247,16 @@ INLINE_XPU f32 clampedValue(f32 value, f32 from, f32 to) {
 
 INLINE_XPU i32 clampedValue(i32 value, i32 from, i32 to) {
     i32 mn = value < to ? value : to;
+    return mn > from ? mn : from;
+}
+
+INLINE_XPU u32 clampedValue(u32 value, u32 from, u32 to) {
+    u32 mn = value < to ? value : to;
+    return mn > from ? mn : from;
+}
+
+INLINE_XPU unsigned int clampedValue(unsigned int value, unsigned int from, unsigned int to) {
+    unsigned int mn = value < to ? value : to;
     return mn > from ? mn : from;
 }
 
@@ -232,6 +305,9 @@ INLINE_XPU void swap(T *a, T *b) {
     *b = t;
 }
 
+INLINE_XPU bool isOnCheckerboard(f32 u, f32 v, u8 steps = 4) {
+    return (u8)(v * (f32)steps) % 2 == (u8)(u * (f32)steps) % 2;
+}
 
 template <typename T>
 struct RangeOf {
@@ -357,10 +433,126 @@ enum GeometryType {
     GeometryType_Grid,
     GeometryType_Box,
     GeometryType_Curve,
+    GeometryType_Tet,
+    GeometryType_Quad,
+    GeometryType_Sphere,
+    GeometryType_Light,
 
     GeometryType_Count
 };
 
+enum BoxSide {
+    BoxSide_None   = 0,
+    BoxSide_Left   = 1,
+    BoxSide_Bottom = 2,
+    BoxSide_Back   = 4,
+    BoxSide_Right  = 8,
+    BoxSide_Top    = 16,
+    BoxSide_Front  = 32
+};
+
+
+INLINE_XPU void setUVByBoxSide(BoxSide side, f32 X, f32 Y, f32 Z, f32 *u, f32 *v) {
+    switch (side) {
+        case BoxSide_Top: {
+            *u = X;
+            *v = Z;
+        } break;
+        case BoxSide_Bottom: {
+            *u = -X;
+            *v = -Z;
+        } break;
+        case BoxSide_Left: {
+            *u = -Z;
+            *v = Y;
+        } break;
+        case BoxSide_Right: {
+            *u = Z;
+            *v = Y;
+        } break;
+        case BoxSide_Front: {
+            *u = X;
+            *v = Y;
+        } break;
+        default: {
+            *u = -X;
+            *v = Y;
+        } break;
+    }
+    *u = fast_mul_add(*u, 0.5f, 0.5f);
+    *v = fast_mul_add(*v, 0.5f, 0.5f);
+}
+
+INLINE_XPU void setUVBySphere(f32 X, f32 Y, f32 Z, f32 *u, f32 *v, BoxSide *side = nullptr) {
+    f32 z_over_x = X ? (Z / X) : 2;
+    f32 y_over_x = X ? (Y / X) : 2;
+    if (z_over_x <=  1 &&
+        z_over_x >= -1 &&
+        y_over_x <=  1 &&
+        y_over_x >= -1) { // Right or Left
+        *u = z_over_x;
+        *v = X > 0 ? y_over_x : -y_over_x;
+        if (side) *side = X > 0 ? BoxSide_Right : BoxSide_Left;
+    } else {
+        f32 x_over_z = Z ? (X / Z) : 2;
+        f32 y_over_z = Z ? (Y / Z) : 2;
+        if (x_over_z <=  1 &&
+            x_over_z >= -1 &&
+            y_over_z <=  1 &&
+            y_over_z >= -1) { // Front or Back:
+            *u = -x_over_z;
+            *v = Z > 0 ? y_over_z : -y_over_z;
+            if (side) *side = Z > 0 ? BoxSide_Front : BoxSide_Back;
+        } else { // Top or Bottom
+            *u = X / (Y > 0 ? Y : -Y);
+            *v = Z / Y;
+            if (side) *side = Y > 0 ? BoxSide_Top : BoxSide_Bottom;
+        }
+    }
+    *u = fast_mul_add(*u, 0.5f, 0.5f);
+    *v = fast_mul_add(*v, 0.5f, 0.5f);
+}
+
+struct Sides {
+    union {
+        u8 mask;
+        struct {
+            unsigned int left:1;
+            unsigned int bottom:1;
+            unsigned int back:1;
+            unsigned int right:1;
+            unsigned int top:1;
+            unsigned int front:1;
+        };
+    };
+
+    INLINE_XPU Sides() : mask{0} {}
+    INLINE_XPU Sides(u8 mask) : mask{mask} {}
+    INLINE_XPU Sides(f32 x, f32 y, f32 z) :
+        left{signbit(x)},
+        bottom{signbit(y)},
+        back{signbit(z)},
+        right{!signbit(x)},
+        top{!signbit(y)},
+        front{!signbit(z)}
+    {}
+
+    INLINE_XPU void flip() { mask = ~mask; }
+    INLINE_XPU Sides flipped() const {
+        Sides sides = *this;
+        sides.flip();
+        return sides;
+    }
+};
+
+enum RenderMode {
+    RenderMode_Normals,
+    RenderMode_NormalMap,
+    RenderMode_Beauty,
+    RenderMode_Depth,
+    RenderMode_MipLevel,
+    RenderMode_UVs
+};
 
 enum Axis {
     Axis_X = 1,
@@ -368,22 +560,31 @@ enum Axis {
     Axis_Z = 4
 };
 
-enum BoxSide {
-    BoxSide_None = 0,
-    BoxSide_Top  = 1,
-    BoxSide_Bottom = 2,
-    BoxSide_Left   = 4,
-    BoxSide_Right  = 8,
-    BoxSide_Front  = 16,
-    BoxSide_Back   = 32
+struct OctantShifts {
+    unsigned int x:2;
+    unsigned int y:2;
+    unsigned int z:2;
+
+    INLINE_XPU OctantShifts() : x{0}, y{0}, z{0} {}
+
+    INLINE_XPU OctantShifts(Sides sides) :
+            x{(unsigned int)(3 * sides.left)},
+            y{(unsigned int)(3 * sides.bottom)},
+            z{(unsigned int)(3 * sides.back)}
+    {}
+
+    INLINE_XPU BoxSide getBoxSide(Axis axis) const {
+        return (BoxSide)(
+            (axis == Axis_X) * (Axis_X << x) |
+            (axis == Axis_Y) * (Axis_Y << y) |
+            (axis == Axis_Z) * (Axis_Z << z)
+        );
+    }
 };
 
 template <class T>
-struct Orientation {
-    T rotation{};
-
-    INLINE_XPU Orientation() : rotation{T::Identity} {}
-    INLINE_XPU explicit Orientation(f32 x_radians, f32 y_radians = 0, f32 z_radians = 0) {
+struct Orientation : T {
+    INLINE_XPU Orientation(f32 x_radians = 0.0f, f32 y_radians = 0.0f, f32 z_radians = 0.0f) {
         setRotation(x_radians, y_radians, z_radians);
     }
 
@@ -435,15 +636,27 @@ struct Orientation {
         _update();
     }
 
+    INLINE_XPU void reset() {
+        this->setToIdentity();
+        x = y = z = 0.0f;
+    }
+
 protected:
-    f32 x, y, z;
+    f32 x = 0.0f, y = 0.0f, z = 0.0f;
 
     INLINE_XPU void _update() {
-        rotation = T{};
-        if (z != 0.0f) rotation = T::RotationAroundZ(z);
-        if (x != 0.0f) rotation *= T::RotationAroundX(x);
-        if (y != 0.0f) rotation *= T::RotationAroundY(y);
+        this->setToIdentity();
+        if (z != 0.0f) *this *= T::RotationAroundZ(z);
+        if (x != 0.0f) *this *= T::RotationAroundX(x);
+        if (y != 0.0f) *this *= T::RotationAroundY(y);
     }
+};
+
+enum BRDFType {
+    BRDF_Lambert,
+    BRDF_Blinn,
+    BRDF_Phong,
+    BRDF_CookTorrance
 };
 
 enum ColorID {
@@ -475,7 +688,22 @@ enum ColorID {
 
     DarkCyan,
     DarkMagenta,
-    DarkYellow
+    DarkYellow,
+
+    F0_Default,
+    F0_Water,
+    F0_Glass_Low,
+    F0_Glass_High,
+    F0_Plastic,
+    F0_PlasticHight,
+    F0_Ruby,
+
+    F0_Diamond,
+    F0_Iron,
+    F0_Copper,
+    F0_Gold,
+    F0_Aluminium,
+    F0_Silver
 };
 
 struct ByteColor {
@@ -499,6 +727,107 @@ struct ByteColor {
         A{(u8)(value >> 24)} {}
 };
 
+// Filmic Tone-Mapping: https://www.slideshare.net/naughty_dog/lighting-shading-by-john-hable
+// ====================
+// A = Shoulder Strength (i.e: 0.22)
+// B = Linear Strength   (i.e: 0.3)
+// C = Linear Angle      (i.e: 0.1)
+// D = Toe Strength      (i.e: 0.2)
+// E = Toe Numerator     (i.e: 0.01)
+// F = Toe Denumerator   (i.e: 0.3)
+// LinearWhite = Linear White Point Value (i.e: 11.2)
+//   Note: E/F = Toe Angle
+//   Note: i.e numbers are NOT gamma corrected(!)
+//
+// f(x) = ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F
+//
+// FinalColor = f(LinearColor)/f(LinearWhite)
+//
+// i.e:
+// x = max(0, LinearColor-0.004)
+// GammaColor = (x*(6.2*x + 0.5))/(x*(6.2*x+1.7) + 0.06)
+//
+// A = 6.2
+// B = 1.7
+//
+// C*B = 1/2
+// D*F = 0.06
+// D*E = 0
+//
+// C = 1/2*1/B = 1/2*1/1.7 = 1/(2*1.7) = 1/3.4 =
+// D = 1
+// F = 0.06
+// E = 0
+
+#define TONE_MAP__SHOULDER_STRENGTH 6.2f
+#define TONE_MAP__TOE_STRENGTH 1
+#define TONE_MAP__TOE_NUMERATOR 0
+#define TONE_MAP__TOE_DENOMINATOR 1
+#define TONE_MAP__TOE_ANGLE (TONE_MAP__TOE_NUMERATOR / TONE_MAP__TOE_DENOMINATOR)
+#define TONE_MAP__LINEAR_ANGLE (1.0f/3.4f)
+#define TONE_MAP__LINEAR_WHITE 1
+#define TONE_MAP__LINEAR_STRENGTH 1
+// LinearWhite = 1:
+// f(LinearWhite) = f(1)
+// f(LinearWhite) = (A + C*B + D*E)/(A + B + D*F) - E/F
+#define TONE_MAPPED__LINEAR_WHITE ( \
+    (                               \
+        TONE_MAP__SHOULDER_STRENGTH + \
+        TONE_MAP__LINEAR_ANGLE * TONE_MAP__LINEAR_STRENGTH + \
+        TONE_MAP__TOE_STRENGTH * TONE_MAP__TOE_NUMERATOR \
+    ) / (                           \
+        TONE_MAP__SHOULDER_STRENGTH + TONE_MAP__LINEAR_STRENGTH + \
+        TONE_MAP__TOE_STRENGTH * TONE_MAP__TOE_DENOMINATOR  \
+    ) - TONE_MAP__TOE_ANGLE \
+)
+
+INLINE_XPU f32 toneMapped(f32 LinearColor) {
+    f32 x = LinearColor - 0.004f;
+    if (x < 0.0f) x = 0.0f;
+    f32 x2 = x*x;
+    f32 x2_times_sholder_strength = x2 * TONE_MAP__SHOULDER_STRENGTH;
+    f32 x_times_linear_strength   =  x * TONE_MAP__LINEAR_STRENGTH;
+    return (
+                   (
+                           (
+                                   x2_times_sholder_strength + x*x_times_linear_strength + TONE_MAP__TOE_STRENGTH*TONE_MAP__TOE_NUMERATOR
+                           ) / (
+                                   x2_times_sholder_strength +   x_times_linear_strength + TONE_MAP__TOE_STRENGTH*TONE_MAP__TOE_DENOMINATOR
+                           )
+                   ) - TONE_MAP__TOE_ANGLE
+           ) / (TONE_MAPPED__LINEAR_WHITE);
+}
+
+
+INLINE_XPU f32 gammaCorrected(f32 x) {
+    return (x <= 0.0031308f ? (x * 12.92f) : (1.055f * powf(x, 1.0f/2.4f) - 0.055f));
+}
+
+INLINE_XPU f32 gammaCorrectedApproximately(f32 x) {
+    return powf(x, 1.0f/2.2f);
+}
+INLINE_XPU f32 toneMappedBaked(f32 LinearColor) {
+    // x = max(0, LinearColor-0.004)
+    // GammaColor = (x*(6.2*x + 0.5))/(x*(6.2*x+1.7) + 0.06)
+    // GammaColor = (x*x*6.2 + x*0.5)/(x*x*6.2 + x*1.7 + 0.06)
+
+    f32 x = LinearColor - 0.004f;
+    if (x < 0.0f) x = 0.0f;
+    f32 x2_times_sholder_strength = x * x * 6.2f;
+    return (x2_times_sholder_strength + x*0.5f)/(x2_times_sholder_strength + x*1.7f + 0.06f);
+}
+
+struct EdgeVertexIndices {
+    u32 from, to;
+};
+
+union TriangleVertexIndices {
+    u32 ids[3];
+    struct {
+        u32 v1, v2, v3;
+    };
+};
+
 struct Color {
     union {
         struct { f32 red, green, blue; };
@@ -506,110 +835,72 @@ struct Color {
         f32 components[3];
     };
 
+    INLINE_XPU Color() : r{0.0f}, g{0.0f}, b{0.0f} {}
     INLINE_XPU Color(u8 R, u8 G, u8 B) : red{(f32)R * COLOR_COMPONENT_TO_FLOAT}, green{(f32)G * COLOR_COMPONENT_TO_FLOAT}, blue{(f32)B * COLOR_COMPONENT_TO_FLOAT} {}
     INLINE_XPU Color(ByteColor byte_color) : Color{byte_color.R, byte_color.G, byte_color.B} {}
     INLINE_XPU Color(u32 value) : Color{ByteColor{value}} {}
     INLINE_XPU Color(f32 value) : red{value}, green{value}, blue{value} {}
-    INLINE_XPU Color(f32 red = 0.0f, f32 green = 0.0f, f32 blue = 0.0f) : red{red}, green{green}, blue{blue} {}
-    INLINE_XPU Color(enum ColorID color_id) : Color{} {
+    INLINE_XPU Color(f32 red, f32 green, f32 blue) : red{red}, green{green}, blue{blue} {}
+    INLINE_XPU Color(enum ColorID color_id) : Color{0.0f} {
         switch (color_id) {
             case Black: break;
-            case White:
-                red = 1.0f;
-                green = 1.0f;
-                blue = 1.0f;
-                break;
-            case Grey:
-                red = 0.5f;
-                green = 0.5f;
-                blue = 0.5f;
-                break;
-            case DarkGrey:
-                red = 0.25f;
-                green = 0.25f;
-                blue = 0.25f;
-                break;
-            case BrightGrey:
-                red = 0.75f;
-                green = 0.75f;
-                blue = 0.75f;
-                break;
+            case White: *this = 1.0f; break;
+            case Grey: *this = 0.5f; break;
+            case DarkGrey: *this = 0.25f; break;
+            case BrightGrey: *this = 0.75f; break;
 
-            case Red:
-                red = 1.0f;
-                break;
-            case Green:
-                green = 1.0f;
-                break;
-            case Blue:
-                blue = 1.0f;
-                break;
+            case Red: red = 1.0f; break;
+            case Green: green = 1.0f; break;
+            case Blue: blue = 1.0f; break;
 
-            case DarkRed:
-                red = 0.5f;
-                break;
-            case DarkGreen:
-                green = 0.5f;
-                break;
-            case DarkBlue:
-                blue = 0.5f;
-                break;
+            case DarkRed: red = 0.5f; break;
+            case DarkGreen: green = 0.5f; break;
+            case DarkBlue: blue = 0.5f; break;
 
-            case DarkCyan:
-                green = 0.5f;
-                blue = 0.5f;
-                break;
-            case DarkMagenta:
-                red = 0.5f;
-                blue = 0.5f;
-                break;
-            case DarkYellow:
-                red = 0.5f;
-                green = 0.5f;
-                break;
+            case DarkCyan: green = 0.5f; blue = 0.5f; break;
+            case DarkMagenta: red = 0.5f; blue = 0.5f; break;
+            case DarkYellow: red = 0.5f; green = 0.5f; break;
 
-            case BrightRed:
-                red = 1.0f;
-                green = 0.5f;
-                blue = 0.5f;
-                break;
-            case BrightGreen:
-                red = 0.5f;
-                green = 1.0f;
-                blue = 0.5f;
-                break;
-            case BrightBlue:
-                red = 0.5f;
-                green = 0.5f;
-                blue = 1.0f;
-                break;
+            case BrightRed: red = 1.0f; green = 0.5f; blue = 0.5f; break;
+            case BrightGreen: red = 0.5f; green = 1.0f; blue = 0.5f; break;
+            case BrightBlue: red = 0.5f; green = 0.5f; blue = 1.0f; break;
 
-            case Cyan:
-                blue = 1.0f;
-                green = 1.0f;
-                break;
-            case Magenta:
-                red = 1.0f;
-                blue = 1.0f;
-                break;
-            case Yellow:
-                red = 1.0f;
-                green = 1.0f;
-                break;
+            case Cyan: blue = 1.0f; green = 1.0f; break;
+            case Magenta: red = 1.0f; blue = 1.0f; break;
+            case Yellow: red = 1.0f; green = 1.0f; break;
 
-            case BrightCyan:
-                green = 0.75f;
-                blue = 0.75f;
-                break;
-            case BrightMagenta:
-                red = 0.75f;
-                blue = 0.75f;
-                break;
-            case BrightYellow:
-                red = 0.75f;
-                green = 0.75f;
-                break;
+            case BrightCyan: green = 0.75f; blue = 0.75f; break;
+            case BrightMagenta: red = 0.75f; blue = 0.75f; break;
+            case BrightYellow: red = 0.75f; green = 0.75f; break;
+
+            // Dialectrics (Fresnel):
+            case F0_Default: *this = 0.04f; break;
+            case F0_Water: *this = 0.02f; break;
+            case F0_Plastic: *this = 0.03f; break;
+            case F0_PlasticHight: *this = 0.05f; break;
+            case F0_Glass_Low: *this = 0.03f; break;
+            case F0_Glass_High: *this = 0.08f; break;
+            case F0_Ruby: *this = 0.08f; break;
+            case F0_Diamond: *this = 0.17f; break;
+
+            // Conductors (Fresnel):
+            case F0_Iron: red = 0.56f; green = 0.57f; blue = 0.58f; break;
+            case F0_Copper: red = 0.95f; green = 0.64f; blue = 0.54f; break;
+            case F0_Gold: red = 1.0f; green = 0.71f; blue = 0.29f; break;
+            case F0_Aluminium: red = 0.91f; green = 0.92f; blue = 0.92f; break;
+            case F0_Silver: red = 0.95f; green = 0.93f; blue = 0.88f; break;
         }
+    }
+
+    INLINE_XPU Color& operator = (f32 value) {
+        r = g = b = value;
+        return *this;
+    }
+
+    INLINE_XPU void applyToneMapping() {
+        r = toneMappedBaked(r);
+        g = toneMappedBaked(g);
+        b = toneMappedBaked(b);
     }
 
     INLINE_XPU void applyGamma(f32 gamma = 2.2f) {
@@ -640,11 +931,6 @@ struct Color {
         r = (float)((0xFF0000 & hex) >> 16) * COLOR_COMPONENT_TO_FLOAT;
         g = (float)((0x00FF00 & hex) >>  8) * COLOR_COMPONENT_TO_FLOAT;
         b = (float)( 0x0000FF & hex)        * COLOR_COMPONENT_TO_FLOAT;
-    }
-
-    INLINE_XPU Color& operator = (f32 value) {
-        r = g = b = value;
-        return *this;
     }
 
     INLINE_XPU Color& operator = (ColorID color_id) {
@@ -795,7 +1081,55 @@ struct Color {
                 fast_mul_add(b, factor, to_be_added.b)
         };
     }
+
+    INLINE_XPU Color scaleAdd(f32 factor, f32 to_be_added) const {
+        return {
+                fast_mul_add(r, factor, to_be_added),
+                fast_mul_add(g, factor, to_be_added),
+                fast_mul_add(b, factor, to_be_added)
+        };
+    }
+
+    INLINE_XPU Color mulAdd(const Color &factors, const Color &to_be_added) const {
+        return {
+                fast_mul_add(r, factors.r, to_be_added.r),
+                fast_mul_add(g, factors.g, to_be_added.g),
+                fast_mul_add(b, factors.b, to_be_added.b)
+        };
+    }
 };
+
+INLINE_XPU Color operator - (f32 lhs, const Color &rhs) {
+    return {
+            lhs - rhs.r,
+            lhs - rhs.g,
+            lhs - rhs.b
+    };
+}
+
+INLINE_XPU Color operator + (f32 lhs, const Color &rhs) {
+    return {
+            lhs + rhs.r,
+            lhs + rhs.g,
+            lhs + rhs.b
+    };
+}
+
+INLINE_XPU Color operator / (f32 lhs, const Color &rhs) {
+    return {
+            lhs / rhs.r,
+            lhs / rhs.g,
+            lhs / rhs.b
+    };
+}
+
+INLINE_XPU Color operator * (f32 lhs, const Color &rhs) {
+    return {
+            lhs * rhs.r,
+            lhs * rhs.g,
+            lhs * rhs.b
+    };
+}
 
 struct Pixel {
     Color color;
@@ -809,6 +1143,13 @@ struct Pixel {
     INLINE_XPU Pixel(u32 value) : Pixel{ByteColor{value}} {}
     INLINE_XPU Pixel(u8 R, u8 G, u8 B, u8 A) : Pixel{ByteColor{R, G, B, A}} {}
     INLINE_XPU Pixel(f32 value, f32 opacity = 1.0f) : color{Color{value, value, value}}, opacity{opacity} {}
+
+    INLINE_XPU Pixel lerpTo(const Pixel &to, f32 by) {
+        return {
+            color.lerpTo(to.color, by),
+            opacity + (to.opacity - opacity) * by
+        };
+    }
 
     INLINE_XPU Pixel& operator = (f32 value) {
         color = value;
@@ -972,6 +1313,8 @@ union ImageFlags {
         unsigned int mipmap:1;
         unsigned int flip:1;
         unsigned int wrap:1;
+        unsigned int normal:1;
+        unsigned int cubemap:1;
     };
     u32 flags = 0;
 };
@@ -991,6 +1334,7 @@ struct Image : ImageInfo {
 struct PixelImage : Image<Pixel> {};
 struct FloatImage : Image<f32> {};
 struct ByteColorImage : Image<ByteColor> {};
+struct RawImage : Image<u8> {};
 
 #define PIXEL_SIZE (sizeof(Pixel))
 #define CANVAS_PIXELS_SIZE (MAX_WINDOW_SIZE * PIXEL_SIZE * 4)
@@ -998,30 +1342,16 @@ struct ByteColorImage : Image<ByteColor> {};
 #define CANVAS_SIZE (CANVAS_PIXELS_SIZE + CANVAS_DEPTHS_SIZE)
 
 struct Dimensions {
-    u32 width_times_height{(u32)DEFAULT_WIDTH * (u32)DEFAULT_HEIGHT};
-    f32 width_over_height{(f32)DEFAULT_WIDTH / (f32)DEFAULT_HEIGHT};
-    f32 height_over_width{(f32)DEFAULT_HEIGHT / (f32)DEFAULT_WIDTH};
-    f32 f_width{(f32)DEFAULT_WIDTH};
-    f32 f_height{(f32)DEFAULT_HEIGHT};
-    f32 h_width{(f32)DEFAULT_WIDTH * 0.5f};
-    f32 h_height{(f32)DEFAULT_HEIGHT * 0.5f};
-    u16 width{DEFAULT_WIDTH};
-    u16 height{DEFAULT_HEIGHT};
-    u16 stride{DEFAULT_WIDTH};
-
-    Dimensions() = default;
-    Dimensions(u16 Width, u16 Height, u16 Stride) :
-            width_times_height{(u32)Width * (u32)Height},
-            width_over_height{(f32)Width / (f32)Height},
-            height_over_width{(f32)Height / (f32)Width},
-            f_width{(f32)Width},
-            f_height{(f32)Height},
-            h_width{(f32)Width * 0.5f},
-            h_height{(f32)Height * 0.5f},
-            width{Width},
-            height{Height},
-            stride{Stride}
-    {}
+    u32 width_times_height;
+    f32 width_over_height;
+    f32 height_over_width;
+    f32 f_width;
+    f32 f_height;
+    f32 h_width;
+    f32 h_height;
+    u16 width;
+    u16 height;
+    u16 stride;
 
     void update(u16 Width, u16 Height) {
         width = Width;
@@ -1067,6 +1397,7 @@ namespace controls {
 
 namespace os {
     void* getMemory(u64 size, u64 base = 0);
+    void freeMemory(void* memory);
     void setWindowTitle(char* str);
     void setWindowCapture(bool on);
     void setCursorVisibility(bool on);
@@ -1075,6 +1406,11 @@ namespace os {
     void* openFileForWriting(const char* file_path);
     bool readFromFile(void *out, unsigned long, void *handle);
     bool writeToFile(void *out, unsigned long, void *handle);
+    void print(const char *message, u8 color);
+    void printError(const char *message, u8 color);
+    long long int getFileSizeWithoutOpening(const char* path);
+    long long int getFileSize(void *handle);
+    void* readEntireFile(const char* file_path, u64 *out_size);
 }
 
 namespace timers {
@@ -1244,6 +1580,13 @@ namespace memory {
             void* current_address = address;
             address += size;
             return current_address;
+        }
+
+        void releaseMemory() {
+            address -= occupied;
+            os::freeMemory(address);
+            capacity = occupied = 0;
+            address = nullptr;
         }
     };
 }

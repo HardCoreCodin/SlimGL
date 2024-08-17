@@ -8,14 +8,18 @@ enum AntiAliasing {
     SSAA
 };
 
-struct Canvas {
+struct CanvasData {
     Dimensions dimensions;
-    Pixel *pixels{nullptr};
-    f32 *depths{nullptr};
-
     AntiAliasing antialias;
+    Pixel *pixels;
+    f32 *depths;
 
-    Canvas(u16 width = MAX_WIDTH, u16 height = MAX_HEIGHT, AntiAliasing antialiasing = NoAA) : antialias{antialiasing} {
+    CanvasData() = default;
+};
+
+struct Canvas : CanvasData {
+    Canvas(u16 width = MAX_WIDTH, u16 height = MAX_HEIGHT, AntiAliasing antialiasing = NoAA) {
+        antialias = antialiasing;
         if (memory::canvas_memory_capacity) {
             pixels = (Pixel*)memory::canvas_memory;
             memory::canvas_memory += CANVAS_PIXELS_SIZE;
@@ -27,14 +31,12 @@ struct Canvas {
 
             dimensions.update(MAX_WIDTH, MAX_HEIGHT);
             clear();
-            dimensions.update(width, height);
         } else {
             pixels = nullptr;
             depths = nullptr;
         }
+        dimensions.update(width, height);
     }
-
-    Canvas(Pixel *pixels, f32 *depths) noexcept : pixels{pixels}, depths{depths} {}
 
     void clear(f32 red = 0, f32 green = 0, f32 blue = 0, f32 opacity = 1.0f, f32 depth = INFINITY) const {
         i32 pixels_width  = dimensions.width;
@@ -61,19 +63,13 @@ struct Canvas {
     }
 
     void drawFrom(Canvas& source_canvas, const RectI* source_bounds = nullptr, const RectI* target_bounds = nullptr, f32 opacity = 1.0f, bool blend = true, bool include_depths = false) {
-        RectI src{
-                0, source_canvas.dimensions.width,
-                0, source_canvas.dimensions.height
-        };
-        if (source_bounds)
-            src -= *source_bounds;
+        RectI src{0, source_canvas.dimensions.width,
+                  0, source_canvas.dimensions.height};
+        if (source_bounds) src -= *source_bounds;
 
-        RectI trg{
-                0, dimensions.width,
-                0, dimensions.height
-        };
-        if (target_bounds)
-            trg = *target_bounds;
+        RectI trg{0, dimensions.width,
+                  0, dimensions.height};
+        if (target_bounds) trg = *target_bounds;
 
         if ((antialias == SSAA) && (source_canvas.antialias == SSAA)) {
             src *= 2;
@@ -95,23 +91,17 @@ struct Canvas {
 
                 i32 src_offset = source_canvas.antialias == SSAA ? (
                         (source_canvas.dimensions.stride * (src_y >> 1) + (src_x >> 1)) * 4 + (2 * (src_y & 1)) + (src_x & 1)
-                ) : (
-                                         source_canvas.dimensions.stride * src_y + src_x
-                                 );
+                ) : (source_canvas.dimensions.stride * src_y + src_x);
 
                 Pixel& pixel{ source_canvas.pixels[src_offset] };
                 if ((pixel.opacity == 0.0f) || (
-                        (pixel.color.r == 0.0f) &&
-                        (pixel.color.g == 0.0f) &&
-                        (pixel.color.b == 0.0f)))
+                    (pixel.color.r == 0.0f) &&
+                    (pixel.color.g == 0.0f) &&
+                    (pixel.color.b == 0.0f)))
                     continue;
 
-                if (include_depths)
-                    depth = source_canvas.depths[src_offset];
-
-                if (blend) {
-                    setPixel(x, y, pixel.color / pixel.opacity, pixel.opacity * opacity, include_depths ? depth : 0.0f);
-                }
+                if (include_depths) depth = source_canvas.depths[src_offset];
+                if (blend) setPixel(x, y, pixel.color / pixel.opacity, pixel.opacity * opacity, include_depths ? depth : 0.0f);
                 else {
                     i32 trg_offset = antialias == SSAA ? (
                             (dimensions.stride * (y >> 1) + (x >> 1)) * 4 + (2 * (y & 1)) + (x & 1)
@@ -127,20 +117,15 @@ struct Canvas {
     }
 
     void drawToWindow() const {
-        u32 *content_value = window::content;
+        u32 *content = window::content;
         Pixel *pixel = pixels;
-        for (u16 y = 0; y < window::height; y++)
-            for (u16 x = 0; x < window::width; x++, content_value++) {
-                *content_value = getPixelContent(pixel);
-
-                if (antialias == SSAA)
-                    pixel += 4;
-                else
-                    pixel++;
-            }
+        u32 count = window::height * window::width;
+        u8 step = antialias == SSAA ? 4 : 1;
+        for (u32 i = 0; i < count; i++, content++, pixel += step)
+            *content = getPixelContent(pixel);
     }
 
-    INLINE void setPixel(i32 x, i32 y, const Color &color, f32 opacity = 1.0f, f32 depth = 0, f32 z_top = 0, f32 z_bottom = 0, f32 z_right = 0) const {
+    INLINE_XPU void setPixel(i32 x, i32 y, const Color &color, f32 opacity = 1.0f, f32 depth = INFINITY, f32 z_top = 0, f32 z_bottom = 0, f32 z_right = 0) const {
         int w = dimensions.width;
         int h = dimensions.height;
         if (antialias == SSAA) {
@@ -150,36 +135,35 @@ struct Canvas {
         if (x < 0 || y < 0 || x >= w || y >= h)
             return;
 
+        bool override = false;
+        if (opacity < 0) {
+            opacity = -opacity;
+            override = true;
+        }
         opacity = clampedValue(opacity);
         Pixel pixel{color.clamped(), opacity};
-        pixel.color *= pixel.color;
-        if (opacity != 1.0f)
-            pixel.color *= pixel.opacity;
+        pixel.color *= pixel.color * pixel.opacity;
 
         u32 offset = antialias == SSAA ? ((dimensions.stride * (y >> 1) + (x >> 1)) * 4 + (2 * (y & 1)) + (x & 1)) : (dimensions.stride * y + x);
         Pixel *out_pixel = pixels + offset;
-        f32 *out_depth = depths ? (depths + (antialias == MSAA ? offset * 4 : offset)) : nullptr;
-        if (
-                (
-                        (out_depth == nullptr ||
-                         *out_depth == INFINITY) &&
-                        (out_pixel->color.r == 0) &&
-                        (out_pixel->color.g == 0) &&
-                        (out_pixel->color.b == 0)
-                ) ||
-                (
-                        (opacity == 1.0f) &&
-                        (depth == 0.0f) &&
-                        (z_top == 0.0f) &&
-                        (z_bottom == 0.0f) &&
-                        (z_right == 0.0f)
-                )
-                ) {
+        f32 *out_depth = depths + (antialias == MSAA ? offset * 4 : offset);
+        if (override ||
+            (
+                out_depth[0] == INFINITY &&
+                (out_pixel->color.r == 0) &&
+                (out_pixel->color.g == 0) &&
+                (out_pixel->color.b == 0)
+            ) || (
+                (opacity == 1.0f) &&
+                (depth == INFINITY) &&
+                (z_top == 0.0f) &&
+                (z_bottom == 0.0f) &&
+                (z_right == 0.0f)
+            )
+        ) {
             *out_pixel = pixel;
-            if (depths) {
-                out_depth[0] = depth;
-                if (antialias == MSAA) out_depth[1] = out_depth[2] = out_depth[3] = 0;
-            }
+            out_depth[0] = depth;
+            if (antialias == MSAA) out_depth[1] = out_depth[2] = out_depth[3] = 0;
 
             return;
         }
@@ -188,17 +172,14 @@ struct Canvas {
         if (antialias == MSAA) {
             Pixel accumulated_pixel{};
             for (u8 i = 0; i < 4; i++) {
-                if (depths) {
-                    if (i) depth = i == 1 ? z_top : (i == 2 ? z_bottom : z_right);
-                    _sortPixelsByDepth(depth, &pixel, out_depth, out_pixel, &bg, &fg);
-                    out_depth++;
-                }
+                if (i) depth = i == 1 ? z_top : (i == 2 ? z_bottom : z_right);
+                _sortPixelsByDepth(depth, &pixel, out_depth, out_pixel, &bg, &fg);
+                out_depth++;
                 accumulated_pixel += fg->opacity == 1 ? *fg : fg->alphaBlendOver(*bg);
             }
             *out_pixel = accumulated_pixel * 0.25f;
         } else {
-            if (depths)
-                _sortPixelsByDepth(depth, &pixel, out_depth, out_pixel, &bg, &fg);
+            _sortPixelsByDepth(depth, &pixel, out_depth, out_pixel, &bg, &fg);
             *out_pixel = fg->opacity == 1 ? *fg : fg->alphaBlendOver(*bg);
         }
     }
@@ -270,7 +251,7 @@ struct Canvas {
 #endif
 
 private:
-    static INLINE bool _isTransparentPixelQuad(Pixel *pixel_quad) {
+    static INLINE_XPU bool _isTransparentPixelQuad(Pixel *pixel_quad) {
         return (
                 (pixel_quad[0].opacity == 0.0f) &&
                 (pixel_quad[1].opacity == 0.0f) &&
@@ -279,12 +260,12 @@ private:
         );
     }
 
-    INLINE Pixel _blendPixelQuad(Pixel *pixel_quad) const {
+    INLINE_XPU Pixel _blendPixelQuad(Pixel *pixel_quad) const {
         return (pixel_quad[0] + pixel_quad[1] + pixel_quad[2] + pixel_quad[3]) * 0.25f;
     }
 
-    static INLINE void _sortPixelsByDepth(f32 depth, Pixel *pixel, f32 *out_depth, Pixel *out_pixel, Pixel **background, Pixel **foreground) {
-        if (depth == 0.0f || depth < *out_depth) {
+    static INLINE_XPU void _sortPixelsByDepth(f32 depth, Pixel *pixel, f32 *out_depth, Pixel *out_pixel, Pixel **background, Pixel **foreground) {
+        if (depth == INFINITY || depth < *out_depth) {
             *out_depth = depth;
             *background = out_pixel;
             *foreground = pixel;

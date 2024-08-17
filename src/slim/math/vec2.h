@@ -34,36 +34,36 @@ struct vec2i {
 
     INLINE_XPU vec2i operator - () const {
         return {
-                -x,
-                -y
+            -x,
+            -y
         };
     }
 
     INLINE_XPU vec2i operator - (const vec2i &rhs) const {
         return {
-                x - rhs.x,
-                y - rhs.y
+            x - rhs.x,
+            y - rhs.y
         };
     }
 
     INLINE_XPU vec2i operator + (const vec2i &rhs) const {
         return {
-                x + rhs.x,
-                y + rhs.y
+            x + rhs.x,
+            y + rhs.y
         };
     }
 
     INLINE_XPU vec2i operator * (const vec2i &rhs) const {
         return {
-                x * rhs.x,
-                y * rhs.y
+            x * rhs.x,
+            y * rhs.y
         };
     }
 
     INLINE_XPU vec2i operator / (const vec2i &rhs) const {
         return {
-                x / rhs.x,
-                y / rhs.y
+            x / rhs.x,
+            y / rhs.y
         };
     }
 
@@ -93,29 +93,29 @@ struct vec2i {
 
     INLINE_XPU vec2i operator - (i32 rhs) const {
         return {
-                x - rhs,
-                y - rhs
+            x - rhs,
+            y - rhs
         };
     }
 
     INLINE_XPU vec2i operator + (i32 rhs) const {
         return {
-                x + rhs,
-                y + rhs
+            x + rhs,
+            y + rhs
         };
     }
 
     INLINE_XPU vec2i operator * (i32 rhs) const {
         return {
-                x * rhs,
-                y * rhs
+            x * rhs,
+            y * rhs
         };
     }
 
     INLINE_XPU vec2i operator / (i32 rhs) const {
         return {
-                x / rhs,
-                y / rhs
+            x / rhs,
+            y / rhs
         };
     }
 
@@ -145,29 +145,29 @@ struct vec2i {
 
     INLINE_XPU vec2i operator - (f32 rhs) const {
         return {
-                (i32)((f32)x - rhs),
-                (i32)((f32)y - rhs)
+            (i32)((f32)x - rhs),
+            (i32)((f32)y - rhs)
         };
     }
 
     INLINE_XPU vec2i operator + (f32 rhs) const {
         return {
-                (i32)((f32)x + rhs),
-                (i32)((f32)y + rhs)
+            (i32)((f32)x + rhs),
+            (i32)((f32)y + rhs)
         };
     }
 
     INLINE_XPU vec2i operator * (f32 rhs) const {
         return {
-                (i32)((f32)x * rhs),
-                (i32)((f32)y * rhs)
+            (i32)((f32)x * rhs),
+            (i32)((f32)y * rhs)
         };
     }
 
     INLINE_XPU vec2i operator / (f32 rhs) const {
         return {
-                (i32)((f32)x / rhs),
-                (i32)((f32)y / rhs)
+            (i32)((f32)x / rhs),
+            (i32)((f32)y / rhs)
         };
     }
 
@@ -210,43 +210,43 @@ struct vec2i {
 
     INLINE_XPU vec2i clamped() const {
         return {
-                clampedValue(x),
-                clampedValue(y)
+            clampedValue(x),
+            clampedValue(y)
         };
     }
 
     INLINE_XPU vec2i clamped(const vec2i &upper) const {
         return {
-                clampedValue(x, upper.x),
-                clampedValue(y, upper.y)
+            clampedValue(x, upper.x),
+            clampedValue(y, upper.y)
         };
     }
 
     INLINE_XPU vec2i clamped(const f32 min_value, const f32 max_value) const {
         return {
-                (i32)(clampedValue((f32)x, min_value, max_value)),
-                (i32)(clampedValue((f32)y, min_value, max_value))
+            (i32)(clampedValue((f32)x, min_value, max_value)),
+            (i32)(clampedValue((f32)y, min_value, max_value))
         };
     }
 
     INLINE_XPU vec2i clamped(const i32 min_value, const i32 max_value) const {
         return {
-                clampedValue(x, min_value, max_value),
-                clampedValue(y, min_value, max_value)
+            clampedValue(x, min_value, max_value),
+            clampedValue(y, min_value, max_value)
         };
     }
 
     INLINE_XPU vec2i approachTo(const vec2i &trg, f32 diff) const {
         return {
-                (i32)(approach((f32)x, (f32)trg.x, diff)),
-                (i32)(approach((f32)y, (f32)trg.y, diff))
+            (i32)(approach((f32)x, (f32)trg.x, diff)),
+            (i32)(approach((f32)y, (f32)trg.y, diff))
         };
     }
 
     INLINE_XPU vec2i scaleAdd(f32 factor, const vec2i &to_be_added) const {
         return {
-                (i32)fast_mul_add((f32)x, factor, (f32)to_be_added.x),
-                (i32)fast_mul_add((f32)y, factor, (f32)to_be_added.y)
+            (i32)fast_mul_add((f32)x, factor, (f32)to_be_added.x),
+            (i32)fast_mul_add((f32)y, factor, (f32)to_be_added.y)
         };
     }
 };
@@ -265,9 +265,9 @@ struct vec2 {
     INLINE_XPU vec2(f32 x, f32 y) noexcept : x(x), y(y) {}
     INLINE_XPU vec2(i32 x, i32 y) noexcept : x((f32)x), y((f32)y) {}
     INLINE_XPU vec2(const vec2 &other) noexcept : vec2{other.x, other.y} {}
-    INLINE_XPU explicit vec2(f32 value) noexcept : vec2{value, value} {}
-    INLINE_XPU explicit vec2(vec2i &other) noexcept : vec2{(f32)other.x, (f32)other.y} {}
-    INLINE_XPU explicit vec2(const vec2i &other) noexcept : vec2{(f32)other.x, (f32)other.y} {}
+    INLINE_XPU vec2(f32 value) noexcept : vec2{value, value} {}
+    INLINE_XPU vec2(vec2i &other) noexcept : vec2{(f32)other.x, (f32)other.y} {}
+    INLINE_XPU vec2(const vec2i &other) noexcept : vec2{(f32)other.x, (f32)other.y} {}
 
     INLINE_XPU bool operator == (const vec2 &other) const {
         return (other.x == x) &&
@@ -290,36 +290,36 @@ struct vec2 {
 
     INLINE_XPU vec2 operator - () const {
         return {
-                -x,
-                -y
+            -x,
+            -y
         };
     }
 
     INLINE_XPU vec2 operator - (const vec2 &rhs) const {
         return {
-                x - rhs.x,
-                y - rhs.y
+            x - rhs.x,
+            y - rhs.y
         };
     }
 
     INLINE_XPU vec2 operator + (const vec2 &rhs) const {
         return {
-                x + rhs.x,
-                y + rhs.y
+            x + rhs.x,
+            y + rhs.y
         };
     }
 
     INLINE_XPU vec2 operator * (const vec2 &rhs) const {
         return {
-                x * rhs.x,
-                y * rhs.y
+            x * rhs.x,
+            y * rhs.y
         };
     }
 
     INLINE_XPU vec2 operator / (const vec2 &rhs) const {
         return {
-                x / rhs.x,
-                y / rhs.y
+            x / rhs.x,
+            y / rhs.y
         };
     }
 
@@ -349,30 +349,30 @@ struct vec2 {
 
     INLINE_XPU vec2 operator - (f32 rhs) const {
         return {
-                x - rhs,
-                y - rhs
+            x - rhs,
+            y - rhs
         };
     }
 
     INLINE_XPU vec2 operator + (f32 rhs) const {
         return {
-                x + rhs,
-                y + rhs
+            x + rhs,
+            y + rhs
         };
     }
 
     INLINE_XPU vec2 operator * (f32 rhs) const {
         return {
-                x * rhs,
-                y * rhs
+            x * rhs,
+            y * rhs
         };
     }
 
     INLINE_XPU vec2 operator / (f32 rhs) const {
         f32 factor = 1.0f / rhs;
         return {
-                x * factor,
-                y * factor
+            x * factor,
+            y * factor
         };
     }
 
@@ -403,30 +403,30 @@ struct vec2 {
 
     INLINE_XPU vec2 operator - (i32 rhs) const {
         return {
-                x - (f32)rhs,
-                y - (f32)rhs
+            x - (f32)rhs,
+            y - (f32)rhs
         };
     }
 
     INLINE_XPU vec2 operator + (i32 rhs) const {
         return {
-                x + (f32)rhs,
-                y + (f32)rhs
+            x + (f32)rhs,
+            y + (f32)rhs
         };
     }
 
     INLINE_XPU vec2 operator * (i32 rhs) const {
         return {
-                x * (f32)rhs,
-                y * (f32)rhs
+            x * (f32)rhs,
+            y * (f32)rhs
         };
     }
 
     INLINE_XPU vec2 operator / (i32 rhs) const {
         f32 factor = 1.0f / (f32)rhs;
         return {
-                x * factor,
-                y * factor
+            x * factor,
+            y * factor
         };
     }
 
@@ -457,29 +457,29 @@ struct vec2 {
 
     INLINE_XPU vec2 operator - (const vec2i &rhs) const {
         return {
-                x - (f32)rhs.x,
-                y - (f32)rhs.y
+            x - (f32)rhs.x,
+            y - (f32)rhs.y
         };
     }
 
     INLINE_XPU vec2 operator + (const vec2i &rhs) const {
         return {
-                x + (f32)rhs.x,
-                y + (f32)rhs.y
+            x + (f32)rhs.x,
+            y + (f32)rhs.y
         };
     }
 
     INLINE_XPU vec2 operator * (const vec2i &rhs) const {
         return {
-                x * (f32)rhs.x,
-                y * (f32)rhs.y
+            x * (f32)rhs.x,
+            y * (f32)rhs.y
         };
     }
 
     INLINE_XPU vec2 operator / (const vec2i &rhs) const {
         return {
-                x / (f32)rhs.x,
-                y / (f32)rhs.y
+            x / (f32)rhs.x,
+            y / (f32)rhs.y
         };
     }
 
@@ -522,8 +522,8 @@ struct vec2 {
 
     INLINE_XPU vec2 perp() const {
         return {
-                -y,
-                x
+            -y,
+            x
         };
     }
 
@@ -553,36 +553,36 @@ struct vec2 {
 
     INLINE_XPU vec2 clamped() const {
         return {
-                clampedValue(x),
-                clampedValue(y)
+            clampedValue(x),
+            clampedValue(y)
         };
     }
 
     INLINE_XPU vec2 clamped(const vec2 &upper) const {
         return {
-                clampedValue(x, upper.x),
-                clampedValue(y, upper.y)
+            clampedValue(x, upper.x),
+            clampedValue(y, upper.y)
         };
     }
 
     INLINE_XPU vec2 clamped(const vec2 &lower, const vec2 &upper) const {
         return {
-                clampedValue(x, lower.x, upper.x),
-                clampedValue(y, lower.y, upper.y)
+            clampedValue(x, lower.x, upper.x),
+            clampedValue(y, lower.y, upper.y)
         };
     }
 
     INLINE_XPU vec2 clamped(const f32 min_value, const f32 max_value) const {
         return {
-                clampedValue(x, min_value, max_value),
-                clampedValue(y, min_value, max_value)
+            clampedValue(x, min_value, max_value),
+            clampedValue(y, min_value, max_value)
         };
     }
 
     INLINE_XPU vec2 approachTo(const vec2 &trg, f32 diff) const {
         return {
-                approach(x, trg.x, diff),
-                approach(y, trg.y, diff)
+            approach(x, trg.x, diff),
+            approach(y, trg.y, diff)
         };
     }
 
@@ -592,16 +592,28 @@ struct vec2 {
 
     INLINE_XPU vec2 scaleAdd(f32 factor, const vec2 &to_be_added) const {
         return {
-                fast_mul_add(x, factor, to_be_added.x),
-                fast_mul_add(y, factor, to_be_added.y)
+            fast_mul_add(x, factor, to_be_added.x),
+            fast_mul_add(y, factor, to_be_added.y)
+        };
+    }
+
+    INLINE_XPU vec2 scaleAdd(f32 factor, f32 to_be_added) const {
+        return {
+            fast_mul_add(x, factor, to_be_added),
+            fast_mul_add(y, factor, to_be_added)
         };
     }
 
     INLINE_XPU vec2 mulAdd(const vec2 &factors, const vec2 &to_be_added) const {
         return {
-                fast_mul_add(x, factors.x, to_be_added.x),
-                fast_mul_add(y, factors.y, to_be_added.y)
+            fast_mul_add(x, factors.x, to_be_added.x),
+            fast_mul_add(y, factors.y, to_be_added.y)
         };
+    }
+
+    INLINE_XPU void shiftToNormalized() {
+        x = fast_mul_add(x, 0.5f, 0.5f);
+        y = fast_mul_add(y, 0.5f, 0.5f);
     }
 };
 
@@ -610,144 +622,161 @@ vec2 vec2::Y{0.0f, 1.0f};
 
 INLINE_XPU vec2 minimum(const vec2 &a, const vec2 &b) {
     return {
-            a.x < b.x ? a.x : b.x,
-            a.y < b.y ? a.y : b.y
+        a.x < b.x ? a.x : b.x,
+        a.y < b.y ? a.y : b.y
     };
 }
 
 INLINE_XPU vec2 maximum(const vec2 &a, const vec2 &b) {
     return {
-            a.x > b.x ? a.x : b.x,
-            a.y > b.y ? a.y : b.y
+        a.x > b.x ? a.x : b.x,
+        a.y > b.y ? a.y : b.y
     };
 }
 
 INLINE_XPU vec2i minimum(const vec2i &a, const vec2i &b) {
     return {
-            a.x < b.x ? a.x : b.x,
-            a.y < b.y ? a.y : b.y
+        a.x < b.x ? a.x : b.x,
+        a.y < b.y ? a.y : b.y
     };
 }
 
 INLINE_XPU vec2i maximum(const vec2i &a, const vec2i &b) {
     return {
-            a.x > b.x ? a.x : b.x,
-            a.y > b.y ? a.y : b.y
+        a.x > b.x ? a.x : b.x,
+        a.y > b.y ? a.y : b.y
     };
 }
 
 INLINE_XPU vec2i operator - (const vec2i &lhs, const vec2 &rhs) {
     return {
-            lhs.x - (i32)rhs.x,
-            lhs.y - (i32)rhs.y
+        lhs.x - (i32)rhs.x,
+        lhs.y - (i32)rhs.y
     };
 }
 
 INLINE_XPU vec2i operator + (const vec2i &lhs, const vec2 &rhs) {
     return {
-            lhs.x + (i32)rhs.x,
-            lhs.y + (i32)rhs.y
+        lhs.x + (i32)rhs.x,
+        lhs.y + (i32)rhs.y
     };
 }
 
 INLINE vec2i operator * (const vec2i &lhs, const vec2 &rhs) {
     return {
-            lhs.x * (i32)rhs.x,
-            lhs.y * (i32)rhs.y
+        lhs.x * (i32)rhs.x,
+        lhs.y * (i32)rhs.y
     };
 }
 
 INLINE_XPU vec2i operator / (const vec2i &lhs, const vec2 &rhs) {
     return {
-            lhs.x / (i32)rhs.x,
-            lhs.y / (i32)rhs.y
+        lhs.x / (i32)rhs.x,
+        lhs.y / (i32)rhs.y
     };
 }
 
 INLINE_XPU vec2i operator - (i32 lhs, const vec2 &rhs) {
     return {
-            lhs - (i32)rhs.x,
-            lhs - (i32)rhs.y
+        lhs - (i32)rhs.x,
+        lhs - (i32)rhs.y
     };
 }
 
 INLINE vec2i operator + (i32 lhs, const vec2 &rhs) {
     return {
-            lhs + (i32)rhs.x,
-            lhs + (i32)rhs.y
+        lhs + (i32)rhs.x,
+        lhs + (i32)rhs.y
     };
 }
 
 INLINE vec2i operator * (i32 lhs, const vec2 &rhs) {
     return {
-            lhs * (i32)rhs.x,
-            lhs * (i32)rhs.y
+        lhs * (i32)rhs.x,
+        lhs * (i32)rhs.y
     };
 }
 
 INLINE_XPU vec2i operator / (i32 lhs, const vec2 &rhs) {
     return {
-            lhs / (i32)rhs.x,
-            lhs / (i32)rhs.y
+        lhs / (i32)rhs.x,
+        lhs / (i32)rhs.y
     };
 }
 
 INLINE_XPU vec2i operator - (i32 lhs, const vec2i &rhs) {
     return {
-            lhs - rhs.x,
-            lhs - rhs.y
+        lhs - rhs.x,
+        lhs - rhs.y
     };
 }
 
 INLINE_XPU vec2i operator + (i32 lhs, const vec2i &rhs) {
     return {
-            lhs + rhs.x,
-            lhs + rhs.y
+        lhs + rhs.x,
+        lhs + rhs.y
     };
 }
 
 INLINE_XPU vec2i operator * (i32 lhs, const vec2i &rhs) {
     return {
-            lhs * rhs.x,
-            lhs * rhs.y
+        lhs * rhs.x,
+        lhs * rhs.y
     };
 }
 
 INLINE_XPU vec2i operator / (i32 lhs, const vec2i &rhs) {
     return {
-            lhs / rhs.x,
-            lhs / rhs.y
+        lhs / rhs.x,
+        lhs / rhs.y
     };
 }
 
 INLINE_XPU vec2 operator - (f32 lhs, const vec2 &rhs) {
     return {
-            lhs - rhs.x,
-            lhs - rhs.y
+        lhs - rhs.x,
+        lhs - rhs.y
     };
 }
 
 INLINE_XPU vec2 operator + (f32 lhs, const vec2 &rhs) {
     return {
-            lhs + rhs.x,
-            lhs + rhs.y
+        lhs + rhs.x,
+        lhs + rhs.y
     };
 }
 
 INLINE_XPU vec2 operator / (f32 lhs, const vec2 &rhs) {
     return {
-            lhs / rhs.x,
-            lhs / rhs.y
+        lhs / rhs.x,
+        lhs / rhs.y
     };
 }
 
 INLINE_XPU vec2 operator * (f32 lhs, const vec2 &rhs) {
     return {
-            lhs * rhs.x,
-            lhs * rhs.y
+        lhs * rhs.x,
+        lhs * rhs.y
     };
 }
 
 INLINE_XPU vec2 lerp(const vec2 &from, const vec2 &to, f32 by) {
     return (to - from).scaleAdd(by, from);
 }
+
+struct UV : vec2 {
+    INLINE_XPU UV() : vec2{1.0f} {}
+    INLINE_XPU UV(f32 value) : vec2{value} {}
+
+    INLINE_XPU bool onCheckerboard(u8 steps = 4) const {
+        return isOnCheckerboard(u, v, steps);
+    }
+
+    INLINE_XPU void setByBoxSide(BoxSide side, f32 X, f32 Y, f32 Z) {
+        setUVByBoxSide(side, X, Y, Z, &u, &v);
+    }
+
+    INLINE_XPU void setBySphere(f32 X, f32 Y, f32 Z, BoxSide *side = nullptr) {
+        setUVBySphere(X, Y, Z, &u, &v, side);
+    }
+};

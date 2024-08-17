@@ -1,29 +1,46 @@
 #pragma once
 
-#include "./box.h"
-#include "../scene/scene.h"
+#include "../math/mat4_constructurs.h"
 #include "../scene/selection.h"
-#include "../viewport/viewport.h"
+#include "../gl/gl_edges.h"
 
-void drawSelection(Selection &selection, const Viewport &viewport, const Scene &scene) {
-    static Box box;
 
-    if (controls::is_pressed::alt && !mouse::is_captured && selection.geo_type && selection.geometry) {
+void drawSelection(Selection &selection, const mat4 &view_projection_matrix, const Mesh *meshes) {
+    if (!(controls::is_pressed::alt && !mouse::is_captured && (selection.geometry || selection.light)))
+        return;
+
+    if (selection.geometry) {
         selection.xform = selection.geometry->transform;
         if (selection.geometry->type == GeometryType_Mesh)
-            selection.xform.scale *= scene.meshes[selection.geometry->id].aabb.max;
+            selection.xform.scale *= meshes[selection.geometry->id].aabb.max;
+    } else {
+        selection.xform.position = selection.light->position_or_direction;
+        selection.xform.scale = selection.light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR;
+        selection.xform.orientation.reset();
+    }
 
-        drawBox(box, selection.xform, viewport, Yellow, 0.5f, 0);
-        if (selection.box_side) {
-            ColorID color = White;
-            switch (selection.box_side) {
-                case BoxSide_Left:  case BoxSide_Right: color = Red;   break;
-                case BoxSide_Top:   case BoxSide_Bottom: color = Green; break;
-                case BoxSide_Front: case BoxSide_Back: color = Blue;  break;
-                case BoxSide_None: break;
-            }
+    static mat3 L{ vec3::Z,  vec3::Y, -vec3::X};
+    static mat3 R{-vec3::Z,  vec3::Y,  vec3::X};
+    static mat3 T{ vec3::X, -vec3::Z,  vec3::Y};
+    static mat3 B{ vec3::X,  vec3::Z, -vec3::Y};
+    static mat3 F{-vec3::X,  vec3::Y, -vec3::Z};
+    static mat3 K{ vec3::X,  vec3::Y,  vec3::Z};
 
-            drawBox(box, selection.xform, viewport, color, 0.5f, 1, selection.box_side);
+    mat4 mvp_matrix = Mat4(selection.xform) * view_projection_matrix;
+    gl::cube::draw(mvp_matrix, BrightYellow);
+    if (selection.box_side) {
+        ColorID color = White;
+        mat3* rot;
+        vec3 pos;
+        switch (selection.box_side) {
+        case BoxSide_Left  : rot = &L; pos.x = -1; color = Red;   break;
+        case BoxSide_Right : rot = &R; pos.x = +1; color = Red;   break;
+        case BoxSide_Bottom: rot = &B; pos.y = -1; color = Green; break;
+        case BoxSide_Top   : rot = &T; pos.y = +1; color = Green; break;
+        case BoxSide_Back  : rot = &K; pos.z = -1; color = Blue;  break;
+        case BoxSide_Front : rot = &F; pos.z = +1; color = Blue;  break; 
+        case BoxSide_None  : break;
         }
+        gl::quad::draw(Mat4(*rot, pos * 1.01f) * mvp_matrix, color);
     }
 }

@@ -5,8 +5,6 @@
 struct mat4 {
     vec4 X, Y, Z, W;
 
-    static mat4 Identity;
-
     INLINE_XPU mat4() noexcept :
             X{1, 0, 0, 0},
             Y{0, 1, 0, 0},
@@ -23,34 +21,32 @@ struct mat4 {
             W{Wx, Wy, Wz, Ww} {}
     INLINE_XPU mat4(const mat4 &other) noexcept : mat4{other.X, other.Y, other.Z, other.W} {}
 
-    INLINE_XPU void setRotationAroundX(f32 angle) {
+    INLINE_XPU void setToIdentity() {
+        *this = {};
+    }
+
+    INLINE_XPU void setToRotationAroundX(f32 angle) {
+        X.x = W.w = 1.0f;
+        X.z = X.y = Y.x = Z.x = X.w = Y.w = Z.w = W.x = W.y = W.z = 0.0f;
         Z.z = Y.y = cos(angle);
         Y.z = Z.y = sin(angle);
         Y.z = -Y.z;
-        X.z = X.y = Y.x = Z.x = 0;
-        X.x = 1;
-        W = vec4{0, 0, 0, 1};
-        X.w = Y.w = Z.w = 0;
     };
 
-    INLINE_XPU void setRotationAroundY(f32 angle) {
+    INLINE_XPU void setToRotationAroundY(f32 angle) {
+        Y.y = W.w = 1.0f;
+        Y.x = Y.z = X.y = Z.y = X.w = Y.w = Z.w = W.x = W.y = W.z = 0.0f;
         X.x = Z.z = cos(angle);
         Z.x = X.z = sin(angle);
         Z.x = -Z.x;
-        Y.x = Y.z = X.y = Z.y = 0;
-        Y.y = 1;
-        W = vec4{0, 0, 0, 1};
-        X.w = Y.w = Z.w = 0;
     }
 
-    INLINE_XPU void setRotationAroundZ(f32 angle) {
+    INLINE_XPU void setToRotationAroundZ(f32 angle) {
         X.x = Y.y = cos(angle);
         Y.x = X.y = sin(angle);
         X.y = -X.y;
-        X.z = Y.z = Z.x = Z.y = 0;
-        Z.z = 1;
-        W = vec4{0, 0, 0, 1};
-        X.w = Y.w = Z.w = 0;
+        Z.z = W.w = 1.0f;
+        X.z = Y.z = Z.x = Z.y = X.w = Y.w = Z.w = W.x = W.y = W.z = 0.0f;
     }
 
     INLINE_XPU void rotateAroundX(f32 angle) {
@@ -114,10 +110,10 @@ struct mat4 {
 
     INLINE_XPU f32 det() const {
         return (
-                X.x * (+Y.y*Z.z*W.w - Y.y*Z.w*W.z - Z.y*Y.z*W.w + Z.y*Y.w*W.z + W.y*Y.z*Z.w - W.y*Y.w*Z.z)
-                + X.y * (-Y.x*Z.z*W.w + Y.x*Z.w*W.z + Z.x*Y.z*W.w - Z.x*Y.w*W.z - W.x*Y.z*Z.w + W.x*Y.w*Z.z)
-                + X.z * (+Y.x*Z.y*W.w - Y.x*Z.w*W.y - Z.x*Y.y*W.w + Z.x*Y.w*W.y + W.x*Y.y*Z.w - W.x*Y.w*Z.y)
-                + X.w * (-Y.x*Z.y*W.z + Y.x*Z.z*W.y + Z.x*Y.y*W.z - Z.x*Y.z*W.y - W.x*Y.y*Z.z + W.x*Y.z*Z.y)
+            X.x * (+Y.y*Z.z*W.w - Y.y*Z.w*W.z - Z.y*Y.z*W.w + Z.y*Y.w*W.z + W.y*Y.z*Z.w - W.y*Y.w*Z.z) +
+            X.y * (-Y.x*Z.z*W.w + Y.x*Z.w*W.z + Z.x*Y.z*W.w - Z.x*Y.w*W.z - W.x*Y.z*Z.w + W.x*Y.w*Z.z) +
+            X.z * (+Y.x*Z.y*W.w - Y.x*Z.w*W.y - Z.x*Y.y*W.w + Z.x*Y.w*W.y + W.x*Y.y*Z.w - W.x*Y.w*Z.y) +
+            X.w * (-Y.x*Z.y*W.z + Y.x*Z.z*W.y + Z.x*Y.y*W.z - Z.x*Y.z*W.y - W.x*Y.y*Z.z + W.x*Y.z*Z.y)
         );
     }
 
@@ -127,10 +123,10 @@ struct mat4 {
 
     INLINE_XPU mat4 transposed() const {
         return {
-                X.x, Y.x, Z.x, W.x,
-                X.y, Y.y, Z.y, W.y,
-                X.z, Y.z, Z.z, W.z,
-                X.w, Y.w, Z.w, W.w
+            X.x, Y.x, Z.x, W.x,
+            X.y, Y.y, Z.y, W.y,
+            X.z, Y.z, Z.z, W.z,
+            X.w, Y.w, Z.w, W.w
         };
     }
 
@@ -170,88 +166,88 @@ struct mat4 {
 
     INLINE_XPU mat4 operator + (f32 rhs) const {
         return {
-                X.x + rhs, X.y + rhs, X.z + rhs, X.w + rhs,
-                Y.x + rhs, Y.y + rhs, Y.z + rhs, Y.w + rhs,
-                Z.x + rhs, Z.y + rhs, Z.z + rhs, Z.w + rhs,
-                W.x + rhs, W.y + rhs, W.z + rhs, W.w + rhs
+            X.x + rhs, X.y + rhs, X.z + rhs, X.w + rhs,
+            Y.x + rhs, Y.y + rhs, Y.z + rhs, Y.w + rhs,
+            Z.x + rhs, Z.y + rhs, Z.z + rhs, Z.w + rhs,
+            W.x + rhs, W.y + rhs, W.z + rhs, W.w + rhs
         };
     }
 
     INLINE_XPU mat4 operator - (f32 rhs) const {
         return {
-                X.x - rhs, X.y - rhs, X.z - rhs, X.w - rhs,
-                Y.x - rhs, Y.y - rhs, Y.z - rhs, Y.w - rhs,
-                Z.x - rhs, Z.y - rhs, Z.z - rhs, Z.w - rhs,
-                W.x - rhs, W.y - rhs, W.z - rhs, W.w - rhs
+            X.x - rhs, X.y - rhs, X.z - rhs, X.w - rhs,
+            Y.x - rhs, Y.y - rhs, Y.z - rhs, Y.w - rhs,
+            Z.x - rhs, Z.y - rhs, Z.z - rhs, Z.w - rhs,
+            W.x - rhs, W.y - rhs, W.z - rhs, W.w - rhs
         };
     }
 
     INLINE_XPU mat4 operator * (f32 rhs) const {
         return {
-                X.x * rhs, X.y * rhs, X.z * rhs, X.w * rhs,
-                Y.x * rhs, Y.y * rhs, Y.z * rhs, Y.w * rhs,
-                Z.x * rhs, Z.y * rhs, Z.z * rhs, Z.w * rhs,
-                W.x * rhs, W.y * rhs, W.z * rhs, W.w * rhs
+            X.x * rhs, X.y * rhs, X.z * rhs, X.w * rhs,
+            Y.x * rhs, Y.y * rhs, Y.z * rhs, Y.w * rhs,
+            Z.x * rhs, Z.y * rhs, Z.z * rhs, Z.w * rhs,
+            W.x * rhs, W.y * rhs, W.z * rhs, W.w * rhs
         };
     }
 
     INLINE_XPU mat4 operator / (f32 rhs) const {
         f32 factor = 1.0f / rhs;
         return {
-                X.x * factor, X.y * factor, X.z * factor, X.w * factor,
-                Y.x * factor, Y.y * factor, Y.z * factor, Y.w * factor,
-                Z.x * factor, Z.y * factor, Z.z * factor, Z.w * factor,
-                W.x * factor, W.y * factor, W.z * factor, W.w * factor
+            X.x * factor, X.y * factor, X.z * factor, X.w * factor,
+            Y.x * factor, Y.y * factor, Y.z * factor, Y.w * factor,
+            Z.x * factor, Z.y * factor, Z.z * factor, Z.w * factor,
+            W.x * factor, W.y * factor, W.z * factor, W.w * factor
         };
     }
 
     INLINE_XPU mat4 operator + (const mat4 &rhs) const {
         return {
-                X.x + rhs.X.x, X.y + rhs.X.y, X.z + rhs.X.z, X.w + rhs.X.w,
-                Y.x + rhs.Y.x, Y.y + rhs.Y.y, Y.z + rhs.Y.z, Y.w + rhs.Y.w,
-                Z.x + rhs.Z.x, Z.y + rhs.Z.y, Z.z + rhs.Z.z, Z.w + rhs.Z.w,
-                W.x + rhs.W.x, W.y + rhs.W.y, W.z + rhs.W.z, W.w + rhs.W.w
+            X.x + rhs.X.x, X.y + rhs.X.y, X.z + rhs.X.z, X.w + rhs.X.w,
+            Y.x + rhs.Y.x, Y.y + rhs.Y.y, Y.z + rhs.Y.z, Y.w + rhs.Y.w,
+            Z.x + rhs.Z.x, Z.y + rhs.Z.y, Z.z + rhs.Z.z, Z.w + rhs.Z.w,
+            W.x + rhs.W.x, W.y + rhs.W.y, W.z + rhs.W.z, W.w + rhs.W.w
         };
     }
     INLINE_XPU mat4 operator - (const mat4 &rhs) const {
         return {
-                X.x - rhs.X.x, X.y - rhs.X.y, X.z - rhs.X.z, X.w - rhs.X.w,
-                Y.x - rhs.Y.x, Y.y - rhs.Y.y, Y.z - rhs.Y.z, Y.w - rhs.Y.w,
-                Z.x - rhs.Z.x, Z.y - rhs.Z.y, Z.z - rhs.Z.z, Z.w - rhs.Z.w,
-                W.x - rhs.W.x, W.y - rhs.W.y, W.z - rhs.W.z, W.w - rhs.W.w
+            X.x - rhs.X.x, X.y - rhs.X.y, X.z - rhs.X.z, X.w - rhs.X.w,
+            Y.x - rhs.Y.x, Y.y - rhs.Y.y, Y.z - rhs.Y.z, Y.w - rhs.Y.w,
+            Z.x - rhs.Z.x, Z.y - rhs.Z.y, Z.z - rhs.Z.z, Z.w - rhs.Z.w,
+            W.x - rhs.W.x, W.y - rhs.W.y, W.z - rhs.W.z, W.w - rhs.W.w
         };
     }
 
     INLINE_XPU mat4 operator * (const mat4 &rhs) const {
         return {
-                X.x*rhs.X.x + X.y*rhs.Y.x + X.z*rhs.Z.x + X.w*rhs.W.x, // Row 1 | Column 1
-                X.x*rhs.X.y + X.y*rhs.Y.y + X.z*rhs.Z.y + X.w*rhs.W.y, // Row 1 | Column 2
-                X.x*rhs.X.z + X.y*rhs.Y.z + X.z*rhs.Z.z + X.w*rhs.W.z, // Row 1 | Column 3
-                X.x*rhs.X.w + X.y*rhs.Y.w + X.z*rhs.Z.w + X.w*rhs.W.w, // Row 1 | Column 4
+            X.x*rhs.X.x + X.y*rhs.Y.x + X.z*rhs.Z.x + X.w*rhs.W.x, // Row 1 | Column 1
+            X.x*rhs.X.y + X.y*rhs.Y.y + X.z*rhs.Z.y + X.w*rhs.W.y, // Row 1 | Column 2
+            X.x*rhs.X.z + X.y*rhs.Y.z + X.z*rhs.Z.z + X.w*rhs.W.z, // Row 1 | Column 3
+            X.x*rhs.X.w + X.y*rhs.Y.w + X.z*rhs.Z.w + X.w*rhs.W.w, // Row 1 | Column 4
 
-                Y.x*rhs.X.x + Y.y*rhs.Y.x + Y.z*rhs.Z.x + Y.w*rhs.W.x, // Row 2 | Column 1
-                Y.x*rhs.X.y + Y.y*rhs.Y.y + Y.z*rhs.Z.y + Y.w*rhs.W.y, // Row 2 | Column 2
-                Y.x*rhs.X.z + Y.y*rhs.Y.z + Y.z*rhs.Z.z + Y.w*rhs.W.z, // Row 2 | Column 3
-                Y.x*rhs.X.w + Y.y*rhs.Y.w + Y.z*rhs.Z.w + Y.w*rhs.W.w, // Row 2 | Column 4
+            Y.x*rhs.X.x + Y.y*rhs.Y.x + Y.z*rhs.Z.x + Y.w*rhs.W.x, // Row 2 | Column 1
+            Y.x*rhs.X.y + Y.y*rhs.Y.y + Y.z*rhs.Z.y + Y.w*rhs.W.y, // Row 2 | Column 2
+            Y.x*rhs.X.z + Y.y*rhs.Y.z + Y.z*rhs.Z.z + Y.w*rhs.W.z, // Row 2 | Column 3
+            Y.x*rhs.X.w + Y.y*rhs.Y.w + Y.z*rhs.Z.w + Y.w*rhs.W.w, // Row 2 | Column 4
 
-                Z.x*rhs.X.x + Z.y*rhs.Y.x + Z.z*rhs.Z.x + Z.w*rhs.W.x, // Row 3 | Column 1
-                Z.x*rhs.X.y + Z.y*rhs.Y.y + Z.z*rhs.Z.y + Z.w*rhs.W.y, // Row 3 | Column 2
-                Z.x*rhs.X.z + Z.y*rhs.Y.z + Z.z*rhs.Z.z + Z.w*rhs.W.z, // Row 3 | Column 3
-                Z.x*rhs.X.w + Z.y*rhs.Y.w + Z.z*rhs.Z.w + Z.w*rhs.W.w, // Row 3 | Column 4
+            Z.x*rhs.X.x + Z.y*rhs.Y.x + Z.z*rhs.Z.x + Z.w*rhs.W.x, // Row 3 | Column 1
+            Z.x*rhs.X.y + Z.y*rhs.Y.y + Z.z*rhs.Z.y + Z.w*rhs.W.y, // Row 3 | Column 2
+            Z.x*rhs.X.z + Z.y*rhs.Y.z + Z.z*rhs.Z.z + Z.w*rhs.W.z, // Row 3 | Column 3
+            Z.x*rhs.X.w + Z.y*rhs.Y.w + Z.z*rhs.Z.w + Z.w*rhs.W.w, // Row 3 | Column 4
 
-                W.x*rhs.X.x + W.y*rhs.Y.x + W.z*rhs.Z.x + W.w*rhs.W.x, // Row 3 | Column 1
-                W.x*rhs.X.y + W.y*rhs.Y.y + W.z*rhs.Z.y + W.w*rhs.W.y, // Row 3 | Column 2
-                W.x*rhs.X.z + W.y*rhs.Y.z + W.z*rhs.Z.z + W.w*rhs.W.z, // Row 3 | Column 3
-                W.x*rhs.X.w + W.y*rhs.Y.w + W.z*rhs.Z.w + W.w*rhs.W.w  // Row 3 | Column 4
+            W.x*rhs.X.x + W.y*rhs.Y.x + W.z*rhs.Z.x + W.w*rhs.W.x, // Row 3 | Column 1
+            W.x*rhs.X.y + W.y*rhs.Y.y + W.z*rhs.Z.y + W.w*rhs.W.y, // Row 3 | Column 2
+            W.x*rhs.X.z + W.y*rhs.Y.z + W.z*rhs.Z.z + W.w*rhs.W.z, // Row 3 | Column 3
+            W.x*rhs.X.w + W.y*rhs.Y.w + W.z*rhs.Z.w + W.w*rhs.W.w  // Row 3 | Column 4
         };
     }
 
     INLINE_XPU vec4 operator * (const vec4 &rhs) const {
         return {
-                X.x*rhs.x + Y.x*rhs.y + Z.x*rhs.z + W.x*rhs.w,
-                X.y*rhs.x + Y.y*rhs.y + Z.y*rhs.z + W.y*rhs.w,
-                X.z*rhs.x + Y.z*rhs.y + Z.z*rhs.z + W.z*rhs.w,
-                X.w*rhs.x + Y.w*rhs.y + Z.w*rhs.z + W.w*rhs.w
+            X.x*rhs.x + Y.x*rhs.y + Z.x*rhs.z + W.x*rhs.w,
+            X.y*rhs.x + Y.y*rhs.y + Z.y*rhs.z + W.y*rhs.w,
+            X.z*rhs.x + Y.z*rhs.y + Z.z*rhs.z + W.z*rhs.w,
+            X.w*rhs.x + Y.w*rhs.y + Z.w*rhs.z + W.w*rhs.w
         };
     }
 
@@ -320,7 +316,6 @@ struct mat4 {
         X.w *= factor; Y.w *= factor; Z.w *= factor; W.w *= factor;
     }
 };
-mat4 mat4::Identity = {};
 
 INLINE_XPU mat4 operator * (f32 lhs, const mat4 &rhs) {
     return rhs * lhs;

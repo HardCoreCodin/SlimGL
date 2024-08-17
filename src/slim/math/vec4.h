@@ -39,46 +39,46 @@ struct vec4 {
 
     INLINE_XPU vec4 operator - () const {
         return {
-                -x,
-                -y,
-                -z,
-                -w
+            -x,
+            -y,
+            -z,
+            -w
         };
     }
 
     INLINE_XPU vec4 operator - (const vec4 &rhs) const {
         return {
-                x - rhs.x,
-                y - rhs.y,
-                z - rhs.z,
-                w - rhs.w
+            x - rhs.x,
+            y - rhs.y,
+            z - rhs.z,
+            w - rhs.w
         };
     }
 
     INLINE_XPU vec4 operator + (const vec4 &rhs) const {
         return {
-                x + rhs.x,
-                y + rhs.y,
-                z + rhs.z,
-                w + rhs.w
+            x + rhs.x,
+            y + rhs.y,
+            z + rhs.z,
+            w + rhs.w
         };
     }
 
     INLINE_XPU vec4 operator * (const vec4 &rhs) const {
         return {
-                x * rhs.x,
-                y * rhs.y,
-                z * rhs.z,
-                w * rhs.w
+            x * rhs.x,
+            y * rhs.y,
+            z * rhs.z,
+            w * rhs.w
         };
     }
 
     INLINE_XPU vec4 operator / (const vec4 &rhs) const {
         return {
-                x / rhs.x,
-                y / rhs.y,
-                z / rhs.z,
-                w / rhs.w
+            x / rhs.x,
+            y / rhs.y,
+            z / rhs.z,
+            w / rhs.w
         };
     }
 
@@ -116,38 +116,38 @@ struct vec4 {
 
     INLINE_XPU vec4 operator - (f32 rhs) const {
         return {
-                x - rhs,
-                y - rhs,
-                z - rhs,
-                w - rhs
+            x - rhs,
+            y - rhs,
+            z - rhs,
+            w - rhs
         };
     }
 
     INLINE_XPU vec4 operator + (f32 rhs) const {
         return {
-                x + rhs,
-                y + rhs,
-                z + rhs,
-                w + rhs
+            x + rhs,
+            y + rhs,
+            z + rhs,
+            w + rhs
         };
     }
 
     INLINE_XPU vec4 operator * (f32 rhs) const {
         return {
-                x * rhs,
-                y * rhs,
-                z * rhs,
-                w * rhs
+            x * rhs,
+            y * rhs,
+            z * rhs,
+            w * rhs
         };
     }
 
     INLINE_XPU vec4 operator / (f32 rhs) const {
         f32 factor = 1.0f / rhs;
         return {
-                x * factor,
-                y * factor,
-                z * factor,
-                w * factor
+            x * factor,
+            y * factor,
+            z * factor,
+            w * factor
         };
     }
 
@@ -186,38 +186,38 @@ struct vec4 {
 
     INLINE_XPU vec4 operator - (i32 rhs) const {
         return {
-                x - (f32)rhs,
-                y - (f32)rhs,
-                z - (f32)rhs,
-                w - (f32)rhs
+            x - (f32)rhs,
+            y - (f32)rhs,
+            z - (f32)rhs,
+            w - (f32)rhs
         };
     }
 
     INLINE_XPU vec4 operator + (i32 rhs) const {
         return {
-                x + (f32)rhs,
-                y + (f32)rhs,
-                z + (f32)rhs,
-                w + (f32)rhs
+            x + (f32)rhs,
+            y + (f32)rhs,
+            z + (f32)rhs,
+            w + (f32)rhs
         };
     }
 
     INLINE_XPU vec4 operator * (i32 rhs) const {
         return {
-                x * (f32)rhs,
-                y * (f32)rhs,
-                z * (f32)rhs,
-                w * (f32)rhs
+            x * (f32)rhs,
+            y * (f32)rhs,
+            z * (f32)rhs,
+            w * (f32)rhs
         };
     }
 
     INLINE_XPU vec4 operator / (i32 rhs) const {
         f32 factor = 1.0f / (f32)rhs;
         return {
-                x * factor,
-                y * factor,
-                z * factor,
-                w * factor
+            x * factor,
+            y * factor,
+            z * factor,
+            w * factor
         };
     }
 
@@ -297,46 +297,46 @@ struct vec4 {
 
     INLINE_XPU vec4 clamped() const {
         return {
-                clampedValue(x),
-                clampedValue(y),
-                clampedValue(z),
-                clampedValue(w)
+            clampedValue(x),
+            clampedValue(y),
+            clampedValue(z),
+            clampedValue(w)
         };
     }
 
     INLINE_XPU vec4 clamped(const vec4 &upper) const {
         return {
-                clampedValue(x, upper.x),
-                clampedValue(y, upper.y),
-                clampedValue(z, upper.z),
-                clampedValue(w, upper.w)
+            clampedValue(x, upper.x),
+            clampedValue(y, upper.y),
+            clampedValue(z, upper.z),
+            clampedValue(w, upper.w)
         };
     }
 
     INLINE_XPU vec4 clamped(const vec4 &lower, const vec4 &upper) const {
         return {
-                clampedValue(x, lower.x, upper.x),
-                clampedValue(y, lower.y, upper.y),
-                clampedValue(z, lower.z, upper.z),
-                clampedValue(w, lower.w, upper.w)
+            clampedValue(x, lower.x, upper.x),
+            clampedValue(y, lower.y, upper.y),
+            clampedValue(z, lower.z, upper.z),
+            clampedValue(w, lower.w, upper.w)
         };
     }
 
     INLINE_XPU vec4 clamped(const f32 min_value, const f32 max_value) const {
         return {
-                clampedValue(x, min_value, max_value),
-                clampedValue(y, min_value, max_value),
-                clampedValue(z, min_value, max_value),
-                clampedValue(w, min_value, max_value)
+            clampedValue(x, min_value, max_value),
+            clampedValue(y, min_value, max_value),
+            clampedValue(z, min_value, max_value),
+            clampedValue(w, min_value, max_value)
         };
     }
 
     INLINE_XPU vec4 approachTo(const vec4 &trg, f32 diff) const {
         return {
-                approach(x, trg.x, diff),
-                approach(y, trg.y, diff),
-                approach(z, trg.z, diff),
-                approach(w, trg.w, diff)
+            approach(x, trg.x, diff),
+            approach(y, trg.y, diff),
+            approach(z, trg.z, diff),
+            approach(w, trg.w, diff)
         };
     }
 
@@ -346,19 +346,19 @@ struct vec4 {
 
     INLINE_XPU vec4 scaleAdd(f32 factor, const vec4 &to_be_added) const {
         return {
-                fast_mul_add(x, factor, to_be_added.x),
-                fast_mul_add(y, factor, to_be_added.y),
-                fast_mul_add(z, factor, to_be_added.z),
-                fast_mul_add(w, factor, to_be_added.w)
+            fast_mul_add(x, factor, to_be_added.x),
+            fast_mul_add(y, factor, to_be_added.y),
+            fast_mul_add(z, factor, to_be_added.z),
+            fast_mul_add(w, factor, to_be_added.w)
         };
     }
 
     INLINE_XPU vec4 mulAdd(const vec4 &factors, const vec4 &to_be_added) const {
         return {
-                fast_mul_add(x, factors.x, to_be_added.x),
-                fast_mul_add(y, factors.y, to_be_added.y),
-                fast_mul_add(z, factors.z, to_be_added.z),
-                fast_mul_add(w, factors.w, to_be_added.w)
+            fast_mul_add(x, factors.x, to_be_added.x),
+            fast_mul_add(y, factors.y, to_be_added.y),
+            fast_mul_add(z, factors.z, to_be_added.z),
+            fast_mul_add(w, factors.w, to_be_added.w)
         };
     }
 };
@@ -370,55 +370,55 @@ vec4 vec4::W{0, 0, 0, 1};
 
 INLINE_XPU vec4 minimum(const vec4 &a, const vec4 &b) {
     return {
-            a.x < b.x ? a.x : b.x,
-            a.y < b.y ? a.y : b.y,
-            a.z < b.y ? a.z : b.z,
-            a.w < b.w ? a.w : b.w
+        a.x < b.x ? a.x : b.x,
+        a.y < b.y ? a.y : b.y,
+        a.z < b.y ? a.z : b.z,
+        a.w < b.w ? a.w : b.w
     };
 }
 
 INLINE_XPU vec4 maximum(const vec4 &a, const vec4 &b) {
     return {
-            a.x > b.x ? a.x : b.x,
-            a.y > b.y ? a.y : b.y,
-            a.z > b.z ? a.z : b.z,
-            a.w > b.w ? a.w : b.w
+        a.x > b.x ? a.x : b.x,
+        a.y > b.y ? a.y : b.y,
+        a.z > b.z ? a.z : b.z,
+        a.w > b.w ? a.w : b.w
     };
 }
 
 INLINE_XPU vec4 operator - (f32 lhs, const vec4 &rhs) {
     return {
-            lhs - rhs.x,
-            lhs - rhs.y,
-            lhs - rhs.z,
-            lhs - rhs.w
+        lhs - rhs.x,
+        lhs - rhs.y,
+        lhs - rhs.z,
+        lhs - rhs.w
     };
 }
 
 INLINE_XPU vec4 operator + (f32 lhs, const vec4 &rhs) {
     return {
-            lhs + rhs.x,
-            lhs + rhs.y,
-            lhs + rhs.z,
-            lhs + rhs.w
+        lhs + rhs.x,
+        lhs + rhs.y,
+        lhs + rhs.z,
+        lhs + rhs.w
     };
 }
 
 INLINE_XPU vec4 operator / (f32 lhs, const vec4 &rhs) {
     return {
-            lhs / rhs.x,
-            lhs / rhs.y,
-            lhs / rhs.z,
-            lhs / rhs.w
+        lhs / rhs.x,
+        lhs / rhs.y,
+        lhs / rhs.z,
+        lhs / rhs.w
     };
 }
 
 INLINE_XPU vec4 operator * (f32 lhs, const vec4 &rhs) {
     return {
-            lhs * rhs.x,
-            lhs * rhs.y,
-            lhs * rhs.z,
-            lhs * rhs.w
+        lhs * rhs.x,
+        lhs * rhs.y,
+        lhs * rhs.z,
+        lhs * rhs.w
     };
 }
 

@@ -31,7 +31,7 @@ struct BVHPartition {
 
             // Keep popping from stack while is not empty
             while (top >= 0) {
-                // Pop h and l
+                // Pop H and l
                 end = stack[top--];
                 start = stack[top--];
 
@@ -118,9 +118,6 @@ struct BVHBuildIteration {
     u8 depth;
 };
 
-constexpr f32 EPS = 0.0001f;
-constexpr i32 MAX_TRIANGLES_PER_MESH_RTREE_NODE = 4;
-
 struct BVHBuilder {
     BVHNode *nodes;
     BVHPartition partitions[3];
@@ -128,21 +125,21 @@ struct BVHBuilder {
     u32 *node_ids, *leaf_ids;
     i32 *sort_stack;
 
-    static u32 getSizeInBytes(u32 max_leaf_count) {
+    static u32 getSizeInBytes(u32 max_leaf_node_count) {
         u32 memory_size = sizeof(u32) + sizeof(i32) + 2 * (sizeof(AABB) + sizeof(f32));
         memory_size *= 3;
         memory_size += sizeof(BVHBuildIteration) + sizeof(BVHNode) + sizeof(u32) * 2;
-        memory_size *= max_leaf_count;
+        memory_size *= max_leaf_node_count;
 
         return memory_size;
     }
 
-    BVHBuilder(Mesh *meshes, u32 mesh_count, memory::MonotonicAllocator *memory_allocator) {
-        u32 max_leaf_node_count = 0;
-        if (mesh_count)
-            for (u32 m = 0; m < mesh_count; m++)
-                if (meshes[m].triangle_count > max_leaf_node_count)
-                    max_leaf_node_count = meshes[m].triangle_count;
+    BVHBuilder(u32 max_leaf_node_count, memory::MonotonicAllocator *memory_allocator = nullptr) {
+        memory::MonotonicAllocator temp_allocator;
+        if (!memory_allocator) {
+            temp_allocator = memory::MonotonicAllocator{getSizeInBytes(max_leaf_node_count)};
+            memory_allocator = &temp_allocator;
+        }
 
         iterations = (BVHBuildIteration*)memory_allocator->allocate(sizeof(BVHBuildIteration) * max_leaf_node_count);
         nodes      = (BVHNode*          )memory_allocator->allocate(sizeof(BVHNode)           * max_leaf_node_count);
@@ -266,15 +263,20 @@ struct BVHBuilder {
     }
 
     void buildMesh(Mesh &mesh) {
-        for (u32 i = 0; i < mesh.triangle_count; i++) {
-            TriangleVertexIndices &indices = mesh.vertex_position_indices[i];
-            const vec3 &v1 = mesh.vertex_positions[indices.ids[0]];
-            const vec3 &v2 = mesh.vertex_positions[indices.ids[1]];
-            const vec3 &v3 = mesh.vertex_positions[indices.ids[2]];
-            BVHNode &node = nodes[i];
-            vec3 &min = node.aabb.min;
-            vec3 &max = node.aabb.max;
+        vec3 v1, v2, v3;
+        TriangleVertexIndices indices{};
 
+        BVHNode *node = nodes;
+        for (u32 i = 0; i < mesh.triangle_count; i++, node++) {
+            node->first_index = node_ids[i] = i;
+
+            indices = mesh.vertex_position_indices[i];
+            v1 = mesh.vertex_positions[indices.ids[0]];
+            v2 = mesh.vertex_positions[indices.ids[1]];
+            v3 = mesh.vertex_positions[indices.ids[2]];
+
+            vec3 &min = node->aabb.min;
+            vec3 &max = node->aabb.max;
             min = minimum(minimum(v1, v2), v3);
             max = maximum(maximum(v1, v2), v3);
 
@@ -298,27 +300,43 @@ struct BVHBuilder {
                 min.z -= EPS;
                 max.z += EPS;
             }
-
-            node.first_index = node_ids[i] = i;
         }
 
-        build(mesh.bvh, mesh.triangle_count, MAX_TRIANGLES_PER_MESH_RTREE_NODE);
+        build(mesh.bvh, mesh.triangle_count, MAX_TRIANGLES_PER_MESH_BVH_NODE);
+        f32 area_of_uv, area_of_parallelogram;
+        u32 *triangle_id = leaf_ids;
+        for (u32 i = 0; i < mesh.triangle_count; i++, triangle_id++) {
+            indices = mesh.vertex_position_indices[*triangle_id];
+            v1 = mesh.vertex_positions[indices.ids[0]];
+            v2 = mesh.vertex_positions[indices.ids[1]];
+            v3 = mesh.vertex_positions[indices.ids[2]];
 
-        for (u32 i = 0; i < mesh.triangle_count; i++) {
             Triangle &triangle = mesh.triangles[i];
-            TriangleVertexIndices &indices = mesh.vertex_position_indices[leaf_ids[i]];
-            const vec3 &v1 = mesh.vertex_positions[indices.ids[0]];
-            const vec3 &v2 = mesh.vertex_positions[indices.ids[1]];
-            const vec3 &v3 = mesh.vertex_positions[indices.ids[2]];
-
-            triangle.U = v3 - v1;
-            triangle.V = v2 - v1;
-            triangle.normal = triangle.U.cross(triangle.V).normalized();
+            triangle.local_to_tangent.X = v3 - v1;
+            triangle.local_to_tangent.Y = v2 - v1;
+            triangle.local_to_tangent.Z = triangle.local_to_tangent.X.cross(triangle.local_to_tangent.Y);
+            area_of_parallelogram = triangle.local_to_tangent.Z.length();
+            triangle.normal = triangle.local_to_tangent.Z = triangle.local_to_tangent.Z / area_of_parallelogram;
             triangle.position = v1;
-            triangle.local_to_tangent.X = triangle.U;
-            triangle.local_to_tangent.Y = triangle.V;
-            triangle.local_to_tangent.Z = triangle.normal;
             triangle.local_to_tangent = triangle.local_to_tangent.inverted();
+            triangle.uv_coverage = 1.0f;
+
+            if (mesh.normals_count) {
+                indices = mesh.vertex_normal_indices[*triangle_id];
+                triangle.n1 = mesh.vertex_normals[indices.v1];
+                triangle.n2 = mesh.vertex_normals[indices.v2];
+                triangle.n3 = mesh.vertex_normals[indices.v3];
+            }
+
+            if (mesh.uvs_count) {
+                indices = mesh.vertex_uvs_indices[*triangle_id];
+                triangle.uv1 = mesh.vertex_uvs[indices.v1];
+                triangle.uv2 = mesh.vertex_uvs[indices.v2];
+                triangle.uv3 = mesh.vertex_uvs[indices.v3];
+                area_of_uv = (triangle.uv2.u - triangle.uv1.u) * (triangle.uv3.v - triangle.uv1.v) -
+                             (triangle.uv3.u - triangle.uv1.u) * (triangle.uv2.v - triangle.uv1.v);
+                triangle.uv_coverage = fabsf(area_of_uv / area_of_parallelogram);
+            }
         }
     }
 };

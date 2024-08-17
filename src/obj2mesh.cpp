@@ -46,6 +46,8 @@ int obj2mesh(char* obj_file_path, char* mesh_file_path, bool invert_winding_orde
     mesh.uvs_count = 0;
     mesh.vertex_normals          = nullptr;
     mesh.vertex_normal_indices   = nullptr;
+    mesh.vertex_tangents         = nullptr;
+    mesh.vertex_tangent_indices  = nullptr;
     mesh.vertex_uvs              = nullptr;
     mesh.vertex_uvs_indices      = nullptr;
 
@@ -123,6 +125,7 @@ int obj2mesh(char* obj_file_path, char* mesh_file_path, bool invert_winding_orde
     }
     fclose(obj_file);
 
+    mesh.tangents_count = mesh.triangle_count * 3;
     mesh.bvh.node_count = mesh.triangle_count * 2;
     mesh.bvh.height = (u8)mesh.triangle_count;
 
@@ -130,13 +133,14 @@ int obj2mesh(char* obj_file_path, char* mesh_file_path, bool invert_winding_orde
     memory_capacity += BVHBuilder::getSizeInBytes(mesh.triangle_count * 2);
     memory::MonotonicAllocator memory_allocator{memory_capacity};
     allocateMemory(mesh, &memory_allocator);
-    BVHBuilder builder{&mesh, 1, &memory_allocator};
+    BVHBuilder builder{mesh.triangle_count * 2, &memory_allocator};
 
     vec3 *vertex_position = mesh.vertex_positions;
     vec3 *vertex_normal = mesh.vertex_normals;
     vec2 *vertex_uvs = mesh.vertex_uvs;
     TriangleVertexIndices *vertex_position_indices = mesh.vertex_position_indices;
     TriangleVertexIndices *vertex_normal_indices = mesh.vertex_normal_indices;
+    TriangleVertexIndices *vertex_tangent_indices = mesh.vertex_tangent_indices;
     TriangleVertexIndices *vertex_uvs_indices = mesh.vertex_uvs_indices;
 
     obj_file = fopen(obj_file_path, (char*)"r");
@@ -202,6 +206,33 @@ int obj2mesh(char* obj_file_path, char* mesh_file_path, bool invert_winding_orde
 
     f = 0;
     for (u64 edge_hash : edge_hashes) mesh.edge_vertex_indices[f++] = {(u32)edge_hash, (u32)(edge_hash >> 32)};
+
+    vec3 *tangent = mesh.vertex_tangents;
+    vec2 uv[3];
+    vec3 pos[3];
+    for (f = 0; f < mesh.triangle_count; f++) {
+        for (u8 i = 0; i < 3; i++) {
+            uv[i] = mesh.vertex_uvs[mesh.vertex_uvs_indices[f].ids[i]];
+            pos[i] = mesh.vertex_positions[mesh.vertex_position_indices[f].ids[i]];
+        }
+        for (u8 i = 0; i < 3; i++, tangent++) {
+            u8 i1 = i;
+            u8 i2 = (i + 1) % 3;
+            u8 i3 = (i + 2) % 3;
+            vec3 edge1 = pos[i2] - pos[i1];
+            vec3 edge2 = pos[i3] - pos[i1];
+            vec2 deltaUV1 = uv[i2] - uv[i1];
+            vec2 deltaUV2 = uv[i3] - uv[i1];
+
+            *tangent = vec3{
+                (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+                (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+                (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z)
+            } / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+            mesh.vertex_tangent_indices[f].ids[i] = f * 3 + i;
+        }
+    }
 
     mat3 rot;
     if (rotY) {
@@ -292,4 +323,5 @@ int main(int argc, char *argv[]) {
 }
 
 
-//suzanne.obj suzanne.mesh -invert_winding_order scale:2 rotY:90
+//suzanne.obj monkey.mesh -invert_winding_order scale:2 rotY:90
+//dog.obj dog.mesh -invert_winding_order scale:0.1 rotY:135

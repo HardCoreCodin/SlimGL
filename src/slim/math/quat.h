@@ -6,12 +6,14 @@ struct quat {
     vec3 axis;
     f32 amount;
 
-    static quat Identity;
-
     INLINE_XPU quat() noexcept : quat{vec3{0}, 1.0f} {}
     INLINE_XPU quat(f32 axis_x, f32 axis_y, f32 axis_z, f32 amount) noexcept : axis{axis_x, axis_y, axis_z}, amount{amount} {}
     INLINE_XPU quat(vec3 axis, f32 amount) noexcept : axis{axis}, amount{amount} {}
     INLINE_XPU quat(const quat &other) noexcept : quat{other.axis, other.amount} {}
+
+    INLINE_XPU void setToIdentity() {
+        *this = {};
+    }
 
     INLINE_XPU f32 length() const {
         return sqrtf(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z + amount * amount);
@@ -81,12 +83,13 @@ struct quat {
         }.normalized();
     }
 
+    static INLINE_XPU quat RotationBetweenNormalized(const vec3 &from, const vec3 to)  { return quat{from.cross(to), from.dot(to)}.normalized(); }
     static INLINE_XPU quat RotationAroundX(f32 radians) { return AxisAngle(vec3{1.0f, 0.0f, 0.0f}, radians); }
     static INLINE_XPU quat RotationAroundY(f32 radians) { return AxisAngle(vec3{0.0f, 1.0f, 0.0f}, radians); }
     static INLINE_XPU quat RotationAroundZ(f32 radians) { return AxisAngle(vec3{0.0f, 0.0f, 1.0f}, radians); }
-    INLINE_XPU void setRotationAroundX(f32 radians) { *this = RotationAroundX(radians); }
-    INLINE_XPU void setRotationAroundY(f32 radians) { *this = RotationAroundY(radians); }
-    INLINE_XPU void setRotationAroundZ(f32 radians) { *this = RotationAroundZ(radians); }
+    INLINE_XPU void setToRotationAroundX(f32 radians) { *this = RotationAroundX(radians); }
+    INLINE_XPU void setToRotationAroundY(f32 radians) { *this = RotationAroundY(radians); }
+    INLINE_XPU void setToRotationAroundZ(f32 radians) { *this = RotationAroundZ(radians); }
 
     INLINE_XPU void setXYZ(vec3 &X, vec3 &Y, vec3 &Z) const {
         f32 q0 = amount;
@@ -107,9 +110,14 @@ struct quat {
         Z.z = 2 * (q0 * q0 + q3 * q3) - 1;
     }
 };
-quat quat::Identity = {};
 
 struct OrientationUsingQuaternion : Orientation<quat> {
-    INLINE_XPU OrientationUsingQuaternion(f32 x_radians = 0.0f, f32 y_radians = 0.0f, f32 z_radians = 0.0f) :
-            Orientation<quat>{x_radians, y_radians, z_radians} {}
+    INLINE_XPU OrientationUsingQuaternion(f32 x_radians = 0.0f, f32 y_radians = 0.0f, f32 z_radians = 0.0f) : Orientation<quat>{x_radians, y_radians, z_radians} {}
+
+    INLINE_XPU OrientationUsingQuaternion& operator = (const quat &q) {
+        axis = q.axis;
+        amount = q.amount;
+
+        return *this;
+    }
 };

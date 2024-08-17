@@ -7,19 +7,19 @@ struct String {
     char *char_ptr;
 
     String() noexcept : String{(char*)"", 0} {}
-    String(char *char_ptr) noexcept : length{getLength(char_ptr)}, char_ptr{char_ptr} {}
-    String(char *char_ptr, u32 length) noexcept : length{length}, char_ptr{char_ptr} {}
+    String(const char *char_ptr) noexcept : length{getLength(char_ptr)}, char_ptr{(char*)char_ptr} {}
+    String(const char *char_ptr, u32 length) noexcept : length{length}, char_ptr{(char*)char_ptr} {}
 
-    static String getFilePath(char *file_name, char *buffer, char *adjacent_file) {
+    static String getFilePath(const char *file_name, const char *buffer, const char *adjacent_file) {
         String str(buffer);
         u32 offset = getDirectoryLength(adjacent_file);
         str.copyFrom(adjacent_file, file_name, offset);
         return str;
     }
 
-    void copyFrom(char* CharPtr, u32 offset) {
+    void copyFrom(const char* CharPtr, u32 offset) {
         length = offset;
-        char *source_char = CharPtr;
+        const char *source_char = CharPtr;
         char *string_char = char_ptr + offset;
         while (source_char[0]) {
             *string_char = *source_char;
@@ -30,25 +30,25 @@ struct String {
         *string_char = 0;
     }
 
-    void copyFrom(char* CharPtr1, char* CharPtr2, u32 offset) {
+    void copyFrom(const char* CharPtr1, const char* CharPtr2, u32 offset) {
         copyFrom(CharPtr1, 0);
         copyFrom(CharPtr2, offset);
     }
 
-    String& operator = (char* CharPtr) {
-        char_ptr = CharPtr;
+    String& operator = (const char* CharPtr) {
+        char_ptr = (char*)CharPtr;
         length = getLength(char_ptr);
         return *this;
     }
 
-    static u32 getLength(char *string) {
-        char *ptr = string;
+    static u32 getLength(const char *string) {
+        const char *ptr = string;
         u32 length = 0;
         if (ptr) while (ptr[length]) length++;
         return length;
     }
 
-    static u32 getDirectoryLength(char *path) {
+    static u32 getDirectoryLength(const char *path) {
         u32 path_len = getLength(path);
         u32 dir_len = path_len;
         while ((path[dir_len] != '/') && (path[dir_len] != '\\')) dir_len--;
@@ -170,5 +170,19 @@ struct NumberString {
         if (is_negative) string.length++;
 
         return *this;
+    }
+};
+
+struct File {
+    const char *name = nullptr;
+    char path[256] = {};
+    String path_string{path};
+
+    explicit File(const char* file_path) : name{nullptr} {
+        path_string.copyFrom(file_path, 0);
+    }
+
+    File(const char* file_name, const char* adjacent_file) : name{file_name} {
+        path_string = String::getFilePath(name, path, adjacent_file);
     }
 };

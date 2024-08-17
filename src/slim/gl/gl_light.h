@@ -5,12 +5,14 @@
 
 struct BaseLight {
     vec3 color = {1.0f};
+    vec3 position = {0.0f};
     float ambient_intensity = 1.0f;
     float diffuse_intensity = 1.0f;
     const Projection projection;
 
-    BaseLight(const vec3 &color, float ambient_intensity, float diffuse_intensity, const ProjectionParams &projection_params) :
+    BaseLight(const vec3 &color, const vec3 &position, float ambient_intensity, float diffuse_intensity, const ProjectionParams &projection_params) :
         color{color},
+        position{position},
         ambient_intensity{ambient_intensity},
         diffuse_intensity{diffuse_intensity},
         projection{projection_params}
@@ -18,21 +20,24 @@ struct BaseLight {
 };
 
 struct DirectionalLight : BaseLight {
-    vec3 direction{0.0f, -1.0f, 0.0f};
+    mat3 orientation{};
 
-    DirectionalLight(const vec3 &color, float ambient_intensity, float diffuse_intensity, const vec3 &direction, 
+    DirectionalLight(const vec3 &color, float ambient_intensity, float diffuse_intensity, const vec3 &direction, const vec3 &position = {0}, 
                      float shadow_near = 0.1f, float shadow_far = 100.0f, float shadow_width = 40.0f, float shadow_height = 40.0f) :
-        BaseLight{color, ambient_intensity, diffuse_intensity, ProjectionParams::makeOrthographic(shadow_width, shadow_height, shadow_near, shadow_far)}, 
-        direction{direction} {}
+        BaseLight{color, position, ambient_intensity, diffuse_intensity, ProjectionParams::makeOrthographic(shadow_width, shadow_height, shadow_near, shadow_far)} {}
 
     mat4 transformationMatrix() const
     {
-        return lookAt(-direction) * Mat4(projection);
+        /*vec3 Z{direction.normalized()};
+        vec3 X{vec3::Y.cross(Z).normalized()};
+        vec3 Y{Z.cross(X).normalized()};
+        return Mat4(mat3(X, Y, Z), position) * Mat4(projection);
+        */
+        return Mat4(orientation, position).inverted() * Mat4(projection);
     }
 };
 
 struct PointLight : BaseLight {
-    vec3 position = {0.0f};
     float constant = 1.0;
     float linear = 0.0f;
     float exponent = 0.0f;
@@ -41,20 +46,26 @@ struct PointLight : BaseLight {
     PointLight(const vec3 &color, float ambient_intensity, float diffuse_intensity,
                const vec3 &position, float constant, float linear, float exponent, 
                float shadow_near = 0.1f, float shadow_far = 100.0f) :
-        BaseLight{color, ambient_intensity, diffuse_intensity, 
+        BaseLight{color, position, ambient_intensity, diffuse_intensity, 
               ProjectionParams::makePerspective(1, 1, shadow_near, shadow_far)},
-        position{position}, constant{constant}, linear{linear}, exponent{exponent} {}
+        constant{constant}, linear{linear}, exponent{exponent} {}
 
     void setTransforms(mat4 *trasnforms)
     {
+        static mat3 R{-vec3::Z, -vec3::Y,  vec3::X};
+        static mat3 L{ vec3::Z, -vec3::Y, -vec3::X};
+        static mat3 T{ vec3::X,  vec3::Z,  vec3::Y};
+        static mat3 B{ vec3::X, -vec3::Z, -vec3::Y};
+        static mat3 K{-vec3::X, -vec3::Y, -vec3::Z};
+        static mat3 F{ vec3::X, -vec3::Y,  vec3::Z};
+
         mat4 projection_matrix = Mat4(projection);
-        const vec3 &eye = position;
-        trasnforms[0] = lookAt(eye, eye + vec3(1.0, 0.0, 0.0),  vec3(0.0, -1.0, 0.0)) * projection_matrix;
-        trasnforms[1] = lookAt(eye, eye + vec3(-1.0, 0.0, 0.0), vec3(0.0, -1.0, 0.0)) * projection_matrix;
-        trasnforms[2] = lookAt(eye, eye + vec3(0.0, 1.0, 0.0),  vec3(0.0,  0.0, 1.0)) * projection_matrix;
-        trasnforms[3] = lookAt(eye, eye + vec3(0.0, -1.0, 0.0), vec3(0.0, 0.0, -1.0)) * projection_matrix;
-        trasnforms[4] = lookAt(eye, eye + vec3(0.0, 0.0, 1.0),  vec3(0.0, -1.0, 0.0)) * projection_matrix;
-        trasnforms[5] = lookAt(eye, eye + vec3(0.0, 0.0, -1.0), vec3(0.0, -1.0, 0.0)) * projection_matrix;
+        trasnforms[0] = Mat4(R, position).inverted() * projection_matrix;
+        trasnforms[1] = Mat4(L, position).inverted() * projection_matrix;
+        trasnforms[2] = Mat4(T, position).inverted() * projection_matrix;
+        trasnforms[3] = Mat4(B, position).inverted() * projection_matrix;
+        trasnforms[4] = Mat4(F, position).inverted() * projection_matrix;
+        trasnforms[5] = Mat4(K, position).inverted() * projection_matrix;
     }
 };
 
@@ -70,8 +81,7 @@ struct SpotLight : PointLight {
 };
 
 
-struct GLShadowMap
-{
+struct GLShadowMap {
     const bool is_omni = false;
     GLuint id = 0;
     GLuint FBO = 0;
@@ -141,6 +151,8 @@ struct GLShadowMap
             printf("Framebuffer error: %s\n", Status);
             return false;
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         return true;
     }
@@ -222,7 +234,7 @@ struct GLDirectionalLight : GLBaseLight {
 
     void update(const DirectionalLight &light) {
         GLBaseLight::update(light);
-        direction.update(light.direction);
+        direction.update(-light.orientation.forward);
         transform.update(light.transformationMatrix());
     }
 };

@@ -57,9 +57,10 @@ dkms.conf
 /x64/
 /out/
 /build/
+/bk/
+/src/slim/vulkan/
+/src/slim/renderer/
 /.idea/
 /.vs/
 /.vscode/
-/SlimEngineCpp.sln
-/SlimEngineCpp.vcxproj
-/SlimEngineCpp.vcxproj.user
+*.json

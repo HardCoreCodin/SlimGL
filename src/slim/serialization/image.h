@@ -38,7 +38,7 @@ u32 getTotalMemoryForImages(String *image_files, u32 image_count) {
 
 template <typename T>
 struct ImagePack {
-    ImagePack(u8 count, Image<T> *images, char **files, char* adjacent_file, u64 memory_base = Terabytes(3)) {
+    ImagePack(u8 count, Image<T> *images, const char **files, const char* adjacent_file, u64 memory_base = 0) {
         char string_buffer[200];
         u32 memory_size{0};
         Image<T> *image = images;
