@@ -4,25 +4,6 @@
 #include "../math/vec3.h"
 #include "../math/quat.h"
 
-#define LIGHT_RADIUS_INTENSITY_FACTOR 64.0f
-#define LIGHT_INTENSITY_RADIUS_FACTOR (1.0f / LIGHT_RADIUS_INTENSITY_FACTOR)
-
-enum LightFlags {
-    Light_None,
-
-    Light_IsDirectional,
-    Light_IsShadowing,
-};
-
-struct Light {
-    Color color{White};
-    f32 intensity = 1.0f;
-    vec3 position_or_direction{};
-    u32 flags = Light_IsShadowing;
-
-    INLINE_XPU bool isDirectional() const { return flags & Light_IsDirectional; }
-    INLINE_XPU bool isPoint() const { return !(isDirectional()); }
-};
 
 INLINE_XPU f32 ggxTrowbridgeReitz_D(f32 roughness, f32 NdotH) { // NDF
     // http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
@@ -91,6 +72,8 @@ INLINE_XPU Color getColorByDistance(f32 distance) { return distanceToColor(dista
 INLINE_XPU Color getColorByUV(vec2 uv) { return {uv.u, uv.v, 1.0f}; }
 
 struct Material {
+    f32 specular_intensity;
+    f32 shininess;
     Color albedo = 1.0f;
     f32 roughness = 1.0f;
 

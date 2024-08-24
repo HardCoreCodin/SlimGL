@@ -2,39 +2,6 @@
 
 #include "../math/vec3.h"
 
-struct ProjectionParams
-{
-    float near_distance;
-    float far_distance;
-    union {
-        float width;
-        float focal_length;
-    };
-    union {
-        float height;
-        float height_over_width;
-    };
-    bool is_perspective;
-    bool to_cube;
-
-    static ProjectionParams makePerspective(
-        float focal_length, 
-        float height_over_width,
-        float near_distance,
-        float far_distance,
-        bool to_cube = true) {
-        return {near_distance, far_distance, focal_length, height_over_width, true, to_cube};
-    }
-
-    static ProjectionParams makeOrthographic(
-        float width, 
-        float height,
-        float near_distance,
-        float far_distance,
-        bool to_cube = true) {
-        return {near_distance, far_distance, width, height, false, to_cube};
-    }
-};
 
 struct Projection {
     ProjectionParams params;

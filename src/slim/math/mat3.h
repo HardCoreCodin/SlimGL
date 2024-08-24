@@ -79,8 +79,8 @@ struct mat3 {
         f32 c = cos(radians);
         f32 s = sin(radians);
         return {
-            {c, s, 0},
-            {-s, c, 0},
+            {c, -s, 0},
+            {s, c, 0},
             {0, 0, 1}
         };
     }

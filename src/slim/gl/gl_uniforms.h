@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdio.h>
-#include "./gl_shader.h"
+#include "./gl_base.h"
 
 
 struct GLUniformLocation {

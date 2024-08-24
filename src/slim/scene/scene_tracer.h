@@ -4,7 +4,7 @@
 #include "./mesh_tracer.h"
 
 struct SceneTracer {
-    SphereTracer light_tracer{};
+    SphereTracer sphere_tracer{};
     MeshTracer mesh_tracer{nullptr};
     u32 *stack{nullptr};
     Ray aux_ray;
@@ -96,12 +96,11 @@ struct SceneTracer {
 
         return closest_hit_geo;
     }
-
-    XPU bool hitLight(const Light &light, Ray &ray, RayHit &hit) {
-        return light.isPoint() && light_tracer.hit(
-            light.position_or_direction,
-            light.intensity * LIGHT_INTENSITY_RADIUS_FACTOR,
-            LIGHT_RADIUS_INTENSITY_FACTOR / light.intensity,
+    
+    XPU bool hitLight(const BaseLight *light, Ray &ray, RayHit &hit) {
+        return sphere_tracer.hit(
+            light->position,
+            1.0f,
             ray.origin,
             ray.direction,
             hit.distance

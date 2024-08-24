@@ -84,14 +84,41 @@ struct quat {
     }
 
     static INLINE_XPU quat RotationBetweenNormalized(const vec3 &from, const vec3 to)  { return quat{from.cross(to), from.dot(to)}.normalized(); }
-    static INLINE_XPU quat RotationAroundX(f32 radians) { return AxisAngle(vec3{1.0f, 0.0f, 0.0f}, radians); }
-    static INLINE_XPU quat RotationAroundY(f32 radians) { return AxisAngle(vec3{0.0f, 1.0f, 0.0f}, radians); }
-    static INLINE_XPU quat RotationAroundZ(f32 radians) { return AxisAngle(vec3{0.0f, 0.0f, 1.0f}, radians); }
+    static INLINE_XPU quat RotationAroundX(f32 radians) { return AxisAngle(vec3{1.0f, 0.0f, 0.0f}, -radians); }
+    static INLINE_XPU quat RotationAroundY(f32 radians) { return AxisAngle(vec3{0.0f, 1.0f, 0.0f}, -radians); }
+    static INLINE_XPU quat RotationAroundZ(f32 radians) { return AxisAngle(vec3{0.0f, 0.0f, 1.0f}, -radians); }
     INLINE_XPU void setToRotationAroundX(f32 radians) { *this = RotationAroundX(radians); }
     INLINE_XPU void setToRotationAroundY(f32 radians) { *this = RotationAroundY(radians); }
     INLINE_XPU void setToRotationAroundZ(f32 radians) { *this = RotationAroundZ(radians); }
 
     INLINE_XPU void setXYZ(vec3 &X, vec3 &Y, vec3 &Z) const {
+        /*
+        f32 x = axis.x;
+        f32 y = axis.y;
+        f32 z = axis.z;
+        f32 w = axis.w;
+        f32 qxx = x * x;
+		f32 qyy = y * y;
+		f32 qzz = z * z;
+		f32 qxz = x * z;
+		f32 qxy = x * y;
+		f32 qyz = y * z;
+		f32 qwx = w * x;
+		f32 qwy = w * y;
+		f32 qwz = w * z;
+
+        X.x = 1.0f - 2.0f * (qyy + qzz);
+		X.y = 2.0f * (qxy + qwz);
+		X.z = 2.0f * (qxz - qwy);
+
+		Y.x = 2.0f * (qxy - qwz);
+		Y.y = 1.0f - 2.0f * (qxx +  qzz);
+		Y.z = 2.0f * (qyz + qwx);
+
+		Z.x = 2.0f * (qxz + qwy);
+		Z.y = 2.0f * (qyz - qwx);
+		Z.z = 1.0f - 2.0f* (qxx +  qyy);
+        return;*/
         f32 q0 = amount;
         f32 q1 = -axis.x;
         f32 q2 = -axis.y;

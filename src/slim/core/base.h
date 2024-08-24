@@ -652,6 +652,40 @@ protected:
     }
 };
 
+
+struct ProjectionParams {
+    float near_distance;
+    float far_distance;
+    union {
+        float width;
+        float focal_length;
+    };
+    union {
+        float height;
+        float height_over_width;
+    };
+    bool is_perspective;
+    bool to_cube;
+
+    static ProjectionParams makePerspective(
+        float focal_length = 2.0f, 
+        float height_over_width = 1.0f,
+        float near_distance = 0.001f,
+        float far_distance = 100.0f,
+        bool to_cube = true) {
+        return {near_distance, far_distance, focal_length, height_over_width, true, to_cube};
+    }
+
+    static ProjectionParams makeOrthographic(
+        float width, 
+        float height,
+        float near_distance,
+        float far_distance,
+        bool to_cube = true) {
+        return {near_distance, far_distance, width, height, false, to_cube};
+    }
+};
+
 enum BRDFType {
     BRDF_Lambert,
     BRDF_Blinn,

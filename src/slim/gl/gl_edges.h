@@ -1,29 +1,12 @@
 #pragma once
 
+#include "gl_common.h"
 #include "gl_shader.h"
 #include "gl_uniforms.h"
 #include "../math/mat4.h"
 
 
 namespace gl {
-    static const char* position_vertex_shader = R"(#version 330
-layout (location = 0) in vec3 pos;
-
-uniform mat4 mvp;
-
-void main() {
-	gl_Position = mvp * vec4(pos, 1.0);
-})";
-
-    static const char* uniform_color_fragment_shader = R"(#version 330
-out vec4 out_color;
-
-uniform vec3 line_color;
-
-void main(void) {
-	out_color = vec4(line_color, 1.0);
-})";
-
     static const char* inline_quad_line_vertex_shader = R"(#version 330
 uniform mat4 mvp;
 
@@ -112,7 +95,7 @@ void main() {
         }
 
         void draw(const mat4 &mvp_matrix, const vec3& color = {1}) {
-		    init();
+		    if (!program.id) init();
             glUseProgram(program.id);
 
             mvp.update(mvp_matrix);
@@ -133,7 +116,7 @@ void main() {
             if (program.id) return;
 
             GLShader shaders[] = {
-                {GL_VERTEX_SHADER, nullptr, position_vertex_shader},
+                {GL_VERTEX_SHADER, nullptr, base_vertex_shader},
                 {GL_FRAGMENT_SHADER, nullptr, uniform_color_fragment_shader}
             };
             program.compile(shaders, 2);

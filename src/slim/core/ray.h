@@ -314,7 +314,8 @@ struct Ray {
 struct SphereTracer {
     f32 b, c, t_near, t_far, t_max;
 
-    INLINE_XPU bool hit(const vec3 &center, f32 radius, f32 one_over_radius, const vec3 &Ro, const vec3 &Rd, f32 &max_distance) {
+    INLINE_XPU bool hit(const vec3 &center, const f32 radius, const vec3 &Ro, const vec3 &Rd, f32 &max_distance) {
+        const f32 one_over_radius = 1.0f / radius;
         t_max = max_distance * one_over_radius;
         vec3 rc{(center - Ro) * one_over_radius};
 

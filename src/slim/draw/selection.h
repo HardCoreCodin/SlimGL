@@ -6,7 +6,15 @@
 
 
 void drawSelection(Selection &selection, const mat4 &view_projection_matrix, const Mesh *meshes) {
-    if (!(controls::is_pressed::alt && !mouse::is_captured && (selection.geometry || selection.light)))
+    if (
+        !(
+            controls::is_pressed::alt && 
+            !mouse::is_captured && (
+                selection.geometry || 
+                selection.light
+            )
+          )
+        )
         return;
 
     if (selection.geometry) {
@@ -14,9 +22,14 @@ void drawSelection(Selection &selection, const mat4 &view_projection_matrix, con
         if (selection.geometry->type == GeometryType_Mesh)
             selection.xform.scale *= meshes[selection.geometry->id].aabb.max;
     } else {
-        selection.xform.position = selection.light->position_or_direction;
-        selection.xform.scale = selection.light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR;
-        selection.xform.orientation.reset();
+        selection.xform.position = selection.light->position;
+        selection.xform.scale = 1.0f; //selection.light->scale();
+        switch (selection.light->type)
+        {
+        case LightType::Point      : selection.xform.orientation.reset();
+        case LightType::Directional: selection.xform.orientation = ((DirectionalLight*)selection.light)->orientation;
+        case LightType::Spot       : selection.xform.orientation = ((SpotLight*)selection.light)->orientation;
+        }
     }
 
     static mat3 L{ vec3::Z,  vec3::Y, -vec3::X};

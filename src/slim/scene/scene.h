@@ -4,6 +4,7 @@
 #include "./grid.h"
 #include "./box.h"
 #include "./camera.h"
+#include "./light.h"
 #include "./material.h"
 #include "./bvh_builder.h"
 #include "../core/texture.h"
@@ -13,13 +14,52 @@
 #include "../serialization/mesh.h"
 
 struct SceneCountsData {
-    u32 geometries, cameras, lights, materials, textures, meshes, grids, boxes, tets, quads, curves;
+    u32 geometries;
+    u32 cameras;
+    u32 directional_lights;
+    u32 point_lights;
+    u32 spot_lights;
+    u32 materials;
+    u32 textures;
+    u32 meshes;
+    u32 grids;
+    u32 boxes;
+    u32 tets;
+    u32 quads;
+    u32 curves;
 };
 
 struct SceneCounts : SceneCountsData {
-     SceneCounts(u32 geometries = 0, u32 cameras = 0, u32 lights = 0, u32 materials = 0, u32 textures = 0,
-                 u32 meshes = 0, u32 grids = 0, u32 boxes = 0, u32 tets = 0, u32 quads = 0, u32 curves = 0) :
-         SceneCountsData{geometries, cameras, lights, materials, textures, meshes, grids, boxes, tets, quads, curves} {}
+     SceneCounts(
+         u32 geometries = 0, 
+         u32 cameras = 0, 
+         u32 directional_lights = 0, 
+         u32 point_lights = 0,
+         u32 spot_lights = 0,
+         u32 materials = 0, 
+         u32 textures = 0,
+         u32 meshes = 0, 
+         u32 grids = 0, 
+         u32 boxes = 0, 
+         u32 tets = 0, 
+         u32 quads = 0, 
+         u32 curves = 0
+     ) : SceneCountsData{
+         geometries, 
+         cameras,
+         directional_lights,
+         point_lights,
+         spot_lights,
+         materials,
+         textures, 
+         meshes, 
+         grids, 
+         boxes, 
+         tets, 
+         quads, 
+         curves
+     } 
+     {}
 };
 
 #define SCENE_HAD_EMISSIVE_QUADS 1
@@ -36,7 +76,9 @@ struct SceneData {
 
     Geometry *geometries;
     Camera *cameras;
-    Light *lights;
+    DirectionalLight *directional_lights;
+    PointLight *point_lights;
+    SpotLight *spot_lights;
     Material *materials;
     Texture *textures;
     Mesh *meshes;
@@ -52,16 +94,38 @@ struct SceneData {
 };
 
 struct Scene : SceneData {
-    Scene(SceneCounts counts, Geometry *geometries = nullptr, Camera *cameras = nullptr,
-          Light *lights = nullptr, Material *materials = nullptr,
-          Texture *textures = nullptr, String *texture_files = nullptr,
-          Mesh *meshes = nullptr, String *mesh_files = nullptr,
-          Grid *grids = nullptr, Box *boxes = nullptr, Curve *curves = nullptr,
-          SceneIO *scene_io = nullptr,
-          memory::MonotonicAllocator *memory_allocator = nullptr
-    ) : SceneData{counts, 0, 0,
-                  geometries, cameras, lights, materials, textures, meshes, grids, boxes, curves}
-    {
+    Scene(
+        SceneCounts counts, 
+        Geometry *geometries = nullptr, 
+        Camera *cameras = nullptr,
+        DirectionalLight *directional_lights = nullptr, 
+        PointLight *point_lights = nullptr,
+        SpotLight *spot_lights = nullptr,
+        Material *materials = nullptr,
+        Texture *textures = nullptr, 
+        String *texture_files = nullptr,
+        Mesh *meshes = nullptr, 
+        String *mesh_files = nullptr,
+        Grid *grids = nullptr, 
+        Box *boxes = nullptr, 
+        Curve *curves = nullptr,
+        SceneIO *scene_io = nullptr,
+        
+        memory::MonotonicAllocator *memory_allocator = nullptr
+    ) : SceneData{
+        counts, 0, 0,
+        geometries, 
+        cameras, 
+        directional_lights, 
+        point_lights, 
+        spot_lights, 
+        materials, 
+        textures, 
+        meshes, 
+        grids, 
+        boxes, 
+        curves
+    } {
         bvh.node_count = counts.geometries * 2;
         bvh.height = (u8)counts.geometries;
 
@@ -69,7 +133,9 @@ struct Scene : SceneData {
         u32 capacity = sizeof(BVHBuilder) + (sizeof(u32) + sizeof(AABB) + sizeof(RectI)) * counts.geometries;
         u32 bvh_nodes_capacity = sizeof(BVHNode) * bvh.node_count;
 
-        if (counts.lights && !lights) capacity += sizeof(Material) * counts.lights;
+        if (counts.directional_lights && !directional_lights) capacity += sizeof(DirectionalLight) * counts.point_lights;
+        if (counts.point_lights && !point_lights) capacity += sizeof(PointLight) * counts.point_lights;
+        if (counts.spot_lights && !spot_lights) capacity += sizeof(SpotLight) * counts.spot_lights;
         if (counts.materials && !materials) capacity += sizeof(Material) * counts.materials;
         if (counts.geometries && !geometries) capacity += sizeof(Geometry) * counts.geometries;
         if (counts.boxes && !boxes) capacity += sizeof(Box) * counts.boxes;
@@ -115,9 +181,17 @@ struct Scene : SceneData {
             curves = (Curve*)memory_allocator->allocate(sizeof(Curve) * counts.curves);
             for (u32 i = 0; i < counts.curves; i++) curves[i] = Curve{};
         }
-        if (counts.lights && !lights) {
-            lights = (Light*)memory_allocator->allocate(sizeof(Light) * counts.lights);
-            for (u32 i = 0; i < counts.lights; i++) lights[i] = Light{};
+        if (counts.directional_lights && !directional_lights) {
+            directional_lights = (DirectionalLight*)memory_allocator->allocate(sizeof(DirectionalLight) * counts.directional_lights);
+            for (u32 i = 0; i < counts.directional_lights; i++) directional_lights[i] = DirectionalLight{};
+        }
+        if (counts.point_lights && !point_lights) {
+            point_lights = (PointLight*)memory_allocator->allocate(sizeof(PointLight) * counts.point_lights);
+            for (u32 i = 0; i < counts.point_lights; i++) point_lights[i] = PointLight{};
+        }
+        if (counts.spot_lights && !spot_lights) {
+            spot_lights = (SpotLight*)memory_allocator->allocate(sizeof(SpotLight) * counts.spot_lights);
+            for (u32 i = 0; i < counts.spot_lights; i++) spot_lights[i] = SpotLight{};
         }
         if (counts.materials && !materials) {
             materials = (Material*)memory_allocator->allocate(sizeof(Material) * counts.materials);

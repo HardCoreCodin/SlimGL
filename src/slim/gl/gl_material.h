@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./gl_core.h"
+#include "./gl_base.h"
 
 
 struct GLMaterial {

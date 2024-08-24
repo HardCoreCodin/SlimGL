@@ -23,7 +23,7 @@ struct Selection {
          world_offset,
          *world_position{nullptr};
     Geometry *geometry{nullptr};
-    Light *light{nullptr};
+    BaseLight *light{nullptr};
     f32 object_distance = 0;
 
     BoxSide box_side = BoxSide_None;
@@ -46,31 +46,35 @@ struct Selection {
             // Cast a ray onto the scene to find the closest object behind the hovered pixel:
             ray.reset(new_origin, new_direction);
             Geometry *hit_geo = scene_tracer.trace(ray, hit, scene);
-            Light *hit_light = nullptr;
-            Light *current_light = scene.lights;
-            if (scene.lights)
-                for (u32 i = 0; i < scene.counts.lights; i++, current_light++)
-                    if (current_light->isPoint() &&
-                        scene_tracer.light_tracer.hit(
-                            current_light->position_or_direction,
-                            current_light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR,
-                            LIGHT_RADIUS_INTENSITY_FACTOR / (current_light->intensity * 0.5f),
-                            ray.origin,
-                            ray.direction,
-                            hit.distance
-                        ))
-                        hit_light = current_light;
+            BaseLight *hit_light = nullptr;
+            if (scene.point_lights)
+                for (u32 i = 0; i < scene.counts.point_lights; i++)
+                    if (scene_tracer.hitLight(&scene.point_lights[i], ray, hit))
+                        hit_light = &scene.point_lights[i];
+            if (scene.spot_lights)
+                for (u32 i = 0; i < scene.counts.spot_lights; i++)
+                    if (scene_tracer.hitLight(&scene.spot_lights[i], ray, hit))
+                        hit_light = &scene.spot_lights[i];
+            if (scene.directional_lights)
+                for (u32 i = 0; i < scene.counts.directional_lights; i++)
+                    if (scene_tracer.hitLight(&scene.directional_lights[i], ray, hit))
+                        hit_light = &scene.directional_lights[i];
 
             if (hit_light) {
                 light = hit_light;
                 geometry = nullptr;
 
                 // Capture a pointer to the selected object's position for later use in transformations:
-                world_position = &light->position_or_direction;
+                world_position = &light->position;
 
-                xform.position = light->position_or_direction;
-                xform.scale = light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR;
-                xform.orientation.reset();
+                xform.position = light->position;
+                xform.scale = 1.0f; //light->scale();
+                switch (light->type)
+                {
+                case LightType::Point      : xform.orientation.reset();
+                case LightType::Directional: xform.orientation = ((DirectionalLight*)light)->orientation;
+                case LightType::Spot       : xform.orientation = ((SpotLight*)light)->orientation;
+                }
             } else {
                 light = nullptr;
                 if (hit_geo) {
@@ -113,9 +117,14 @@ struct Selection {
                         if (geometry->type == GeometryType_Mesh)
                             xform.scale *= scene.meshes[geometry->id].aabb.max;
                     } else {
-                        xform.position = light->position_or_direction;
-                        xform.scale = light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR;
-                        xform.orientation.reset();
+                        xform.position = light->position;
+                        xform.scale = 1.0f; //light->scale();
+                        switch (light->type)
+                        {
+                        case LightType::Point      : xform.orientation.reset();
+                        case LightType::Directional: xform.orientation = ((DirectionalLight*)light)->orientation;
+                        case LightType::Spot       : xform.orientation = ((SpotLight*)light)->orientation;
+                        }
                     }
 
                     ray.reset(new_origin, new_direction);
@@ -140,9 +149,14 @@ struct Selection {
                             if (geometry->type == GeometryType_Mesh)
                                 xform.scale *= scene.meshes[geometry->id].aabb.max;
                         } else {
-                            xform.position = light->position_or_direction;
-                            xform.scale = light->intensity * 0.5f * LIGHT_INTENSITY_RADIUS_FACTOR;
-                            xform.orientation.reset();
+                            xform.position = light->position;
+                            xform.scale = 1.0f; //light->scale();
+                            switch (light->type)
+                            {
+                            case LightType::Point      : xform.orientation.reset();
+                            case LightType::Directional: xform.orientation = ((DirectionalLight*)light)->orientation;
+                            case LightType::Spot       : xform.orientation = ((SpotLight*)light)->orientation;
+                            }
                         }
 
                         if (mouse::left_button.is_pressed) {
@@ -164,20 +178,24 @@ struct Selection {
                                 geometry->transform.scale.y = abs(geometry->transform.scale.y);
                                 geometry->transform.scale.z = abs(geometry->transform.scale.z);
                             } else if (light) {
-                                light->intensity = abs(
-                                    LIGHT_RADIUS_INTENSITY_FACTOR * 2.0f * (
+                                light->intensity.diffuse = abs(
+                                    LIGHT_RADIUS_INTENSITY_FACTOR * (
                                         object_scale.x + (
-                                            (abs_pos.length() - abs_org.length()) * (light->intensity * LIGHT_INTENSITY_RADIUS_FACTOR * 0.5f)
+                                            (abs_pos.length() - abs_org.length()) //* light->scale()
                                         )
                                     )
                                 );
                             }
 
-                        } else if (mouse::right_button.is_pressed && geometry) {
+                        } else if (mouse::right_button.is_pressed && (geometry || (light && light->type != LightType::Point))) {
                             vec3 v1{ hit.position - transformation_plane_center };
                             vec3 v2{ transformation_plane_origin - transformation_plane_center };
                             quat rotation = quat{v2.cross(v1), (v1.dot(v2)) + sqrtf(v1.squaredLength() * v2.squaredLength())};
-                            geometry->transform.orientation = (rotation.normalized() * object_rotation).normalized();
+                            rotation = (rotation.normalized() * object_rotation).normalized();
+                            if (geometry)
+                                geometry->transform.orientation = rotation;
+                            else
+                                ((DirectionalLight*)light)->orientation = rotation;
                         }
                     }
                 }

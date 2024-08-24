@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./gl_core.h"
+#include "./gl_base.h"
 
 
 struct GLTexture {
@@ -37,7 +37,7 @@ struct GLTexture {
         return true;
     }
 
-    void bind(GLenum slot = GL_TEXTURE1) {
+    void bind(GLenum slot = GL_TEXTURE1) const {
         glActiveTexture(slot);
         glBindTexture(GL_TEXTURE_2D, id);
     }
@@ -48,7 +48,7 @@ struct GLTexture {
     }
 };
 
-union SkyBoxImages {
+union CubeMapImages {
 	struct {
 		RawImage pox_x;
 		RawImage neg_x;
@@ -59,20 +59,20 @@ union SkyBoxImages {
 	};
 	RawImage array[6];
 
-    SkyBoxImages() {}
+    CubeMapImages() {}
 };
 
 
-struct GLSkyBoxTexture {
+struct GLCubeMapTexture {
     GLuint id = 0;
 
-    GLSkyBoxTexture() = default;
+    GLCubeMapTexture() = default;
 
-    GLSkyBoxTexture(const SkyBoxImages &images) {
+    GLCubeMapTexture(const CubeMapImages &images) {
         load(images);
     }
 
-    bool load(const SkyBoxImages &images) {
+    bool load(const CubeMapImages &images) {
         if (id) destroy();
 
 	    glGenTextures(1, &id);
@@ -99,7 +99,7 @@ struct GLSkyBoxTexture {
         return true;
     }
     
-    void bind(GLenum slot = GL_TEXTURE0) {
+    void bind(GLenum slot = GL_TEXTURE0) const {
         glActiveTexture(slot);
 	    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
     }
