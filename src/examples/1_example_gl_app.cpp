@@ -60,25 +60,25 @@ struct ExampleGLApp : SlimApp {
     GLTexture dog_normal{images[Dog_Normal]};
 
     DirectionalLight directional_light{
-        {-60*DEG_TO_RAD, 30*DEG_TO_RAD, 0}, {1.0f, 0.53f, 0.3f}, {0, 25, -20}
+        {-60*DEG_TO_RAD, 30*DEG_TO_RAD, 0}, {1.0f, 0.53f, 0.3f}, 3.0f, {0, 25, -20}
     };
     PointLight point_lights[2]{
-        {{1.0f, 2.0f, 0.0f}, Blue, {}, {0.0f, 1.0f} },
-        {{-4.0f, 3.0f, 0.0f}, Green, {}, {0.0f, 1.0f} }
+        {{1.0f, 2.0f, 0.0f}, Blue, 100.0f},
+        {{-4.0f, 3.0f, 0.0f}, Green, 100.0f}
     };
     int point_lights_count = 2;
 
     SpotLight spot_lights[2]{
-        {{DEG_TO_RAD*-90, DEG_TO_RAD*0, 0}, {3, 4, 5}, Magenta, {}, {0.0f, 2.0f}},
-        {{}, {}, Cyan, {}, {0.0f, 0.0f}}
+        {{DEG_TO_RAD*-90, DEG_TO_RAD*0, 0}, {3, 4, 5}, Magenta, 1000.0f},
+        {{}, {}, Cyan, 0.0f}
     };
     int spot_lights_count = 2;
 
     enum MaterialID { FloorMaterial, DogMaterial, MaterialCount };
 
     u8 flags{MATERIAL_HAS_NORMAL_MAP | MATERIAL_HAS_ALBEDO_MAP};
-    Material floor_material{0.3f, 4, 0.7f, 0.9f, flags, 2, {Floor_Albedo, Floor_Normal}};
-    Material dog_material{0.3f, 4, 1.0f, 0.6f, flags, 2, {Dog_Albedo, Dog_Normal}};
+    Material floor_material{0.7f, 0.9f, flags, 2, {Floor_Albedo, Floor_Normal}};
+    Material dog_material{1.0f, 0.6f, flags, 2, {Dog_Albedo, Dog_Normal}};
     Material *materials{&floor_material};
 
     enum MesheID { Dog, Dragon, Floor, MeshCount };

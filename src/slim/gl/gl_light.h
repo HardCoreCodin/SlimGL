@@ -6,13 +6,11 @@ namespace gl {
 
     struct GLBaseLight {
         GLVector3Uniform color;
-        GLFloatUniform ambient_intensity;
-        GLFloatUniform diffuse_intensity;
+        GLFloatUniform intensity;
 
         explicit GLBaseLight(const char *variable_name, int index = -1) :
-            color{variable_name, "colour", nullptr, index},
-            ambient_intensity{variable_name, "ambientIntensity", nullptr, index},
-            diffuse_intensity{variable_name, "diffuseIntensity", nullptr, index}
+            color{variable_name, "color", nullptr, index},
+            intensity{variable_name, "intensity", nullptr, index}
         {}
 
         void init(
@@ -21,19 +19,17 @@ namespace gl {
             u32 shadow_map_height = 2048
         ) {
             color.setLocation(shader_program_id);
-            ambient_intensity.setLocation(shader_program_id);
-            diffuse_intensity.setLocation(shader_program_id);
+            intensity.setLocation(shader_program_id);
         }
 
         void update(const BaseLight &light) {
             color.update(light.color);
-            ambient_intensity.update(light.intensity.ambient);
-            diffuse_intensity.update(light.intensity.diffuse);
+            intensity.update(light.intensity);
         }
 
         void setBases(const char* bases)
         {
-            color.bases = ambient_intensity.bases = diffuse_intensity.bases = bases;
+            color.bases = intensity.bases = bases;
         }
     };
 

@@ -14,15 +14,9 @@ enum class LightType {
 
 
 struct LightAttenuation {
-    f32 constant = 0.01f;
-    f32 linear = 0.02f;
-    f32 exponent = 0.03f;
-};
-
-
-struct LightIntensity{
-    f32 ambient = 0.1f;
-    f32 diffuse = 0.9f;
+    f32 constant = 0.0f;
+    f32 linear = 0.0f;
+    f32 exponent = 1.0f;
 };
 
 
@@ -60,9 +54,9 @@ struct ShadowBounds {
 struct BaseLight {
     LightType type;
     LightAttenuation attenuation;
-    LightIntensity intensity;
     ShadowBounds shadow_bounds;
     Color color;
+    f32 intensity;
     vec3 position;
 
     /*
@@ -77,16 +71,16 @@ struct DirectionalLight : BaseLight {
     DirectionalLight(
         const OrientationUsingQuaternion &orientation = {}, 
         const Color &color = White,
+        const float intensity = 1.0f,
         const vec3 &position = {0.0f},
         const LightAttenuation &attenuation = {},
-        const LightIntensity &intensity = {},
         const ShadowBounds &shadow_bounds = {}
     ) : BaseLight{
             LightType::Directional,
             attenuation,
-            intensity,
             shadow_bounds,
             color,
+            intensity,
             position
         },
         orientation{orientation}
@@ -119,15 +113,15 @@ struct PointLight : BaseLight {
     PointLight(
         const vec3 &position = {0.0f},
         const Color &color = White,
+        const float intensity = 1.0f,
         const LightAttenuation &attenuation = {},
-        const LightIntensity &intensity = {},
         const ShadowBounds &shadow_bounds = {}
     ) : BaseLight{
             LightType::Point,
             attenuation,
-            intensity,
             shadow_bounds,
             color,
+            intensity,
             position
         }
     {}
@@ -150,15 +144,15 @@ struct SpotLight : PointLight {
         const OrientationUsingQuaternion &orientation = {},
         const vec3 &position = {0.0f},
         const Color &color = White,
+        const float intensity = 1.0f,
         const LightAttenuation &attenuation = {},
-        const LightIntensity &intensity = {},
         const ShadowBounds &shadow_bounds = {},
         f32 edge = 20.0f
     ) : PointLight{
             position,
             color,
-            attenuation,
             intensity,
+            attenuation,
             shadow_bounds
         },
         orientation{orientation},

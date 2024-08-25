@@ -178,7 +178,7 @@ struct Selection {
                                 geometry->transform.scale.y = abs(geometry->transform.scale.y);
                                 geometry->transform.scale.z = abs(geometry->transform.scale.z);
                             } else if (light) {
-                                light->intensity.diffuse = abs(
+                                light->intensity = abs(
                                     LIGHT_RADIUS_INTENSITY_FACTOR * (
                                         object_scale.x + (
                                             (abs_pos.length() - abs_org.length()) //* light->scale()

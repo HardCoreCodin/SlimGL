@@ -174,11 +174,9 @@ namespace gl {
 			GLMatrix4Uniform projection{"projection"};
 			GLVector3Uniform camera_position{"eyePosition"};
 
+			GLMaterial material{"material"};
 			GLTextureUniform albedo_map{"albedo_map"};
 			GLTextureUniform normal_map{"normal_map"};
-
-			GLFloatUniform shininess{"material", "shininess"};
-			GLFloatUniform specular_intensity{"material", "specularIntensity"};
 
 			GLDirectionalLight directional_light{"directionalLight", "base"};
 			GLIntUniform point_light_count{"pointLightCount"};
@@ -203,8 +201,7 @@ namespace gl {
 				albedo_map.setLocation(program.id);
 				normal_map.setLocation(program.id);
 
-				shininess.setLocation(program.id);
-				specular_intensity.setLocation(program.id);
+				material.init(program.id);
 
 				point_light_count.setLocation(program.id);
 				point_light_count.update(main_scene.counts.point_lights);
@@ -261,16 +258,15 @@ namespace gl {
 				for (int i = 0; i < scene->counts.geometries; i++)
 				{
 					const Geometry &geo{scene->geometries[i]};
-					const Material &material{scene->materials[geo.material_id]};
-					const GLTexture &albedo_map_texture{textures[material.texture_ids[0]]};
-					const GLTexture &normal_map_texture{textures[material.texture_ids[1]]};
+					const Material &geo_material{scene->materials[geo.material_id]};
+					const GLTexture &albedo_map_texture{textures[geo_material.texture_ids[0]]};
+					const GLTexture &normal_map_texture{textures[geo_material.texture_ids[1]]};
 					const GLMesh &mesh{meshes[geo.id]};
 
 					model.update(model_matrices[i]);
+					material.update(geo_material);
 					albedo_map_texture.bind(GL_TEXTURE1);
 					normal_map_texture.bind(GL_TEXTURE2);
-					glUniform1f(specular_intensity.id, material.specular_intensity);
-					glUniform1f(shininess.id, material.shininess);
 					mesh.render();
 				}
 				

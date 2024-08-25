@@ -72,8 +72,6 @@ INLINE_XPU Color getColorByDistance(f32 distance) { return distanceToColor(dista
 INLINE_XPU Color getColorByUV(vec2 uv) { return {uv.u, uv.v, 1.0f}; }
 
 struct Material {
-    f32 specular_intensity;
-    f32 shininess;
     Color albedo = 1.0f;
     f32 roughness = 1.0f;
 

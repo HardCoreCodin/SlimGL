@@ -55,6 +55,15 @@ struct GLIntUniform : GLUniformLocation {
     }
 };
 
+struct GLUIntUniform : GLUniformLocation {
+    explicit GLUIntUniform(const char* variable_name = nullptr, const char* field_name = nullptr, const char* bases = nullptr, int index = -1) :
+        GLUniformLocation{variable_name, field_name, bases, index} {}
+
+    void update(GLuint value) {
+        glUniform1ui(id, value);
+    }
+};
+
 struct GLVector3Uniform : GLUniformLocation {
     explicit GLVector3Uniform(const char* variable_name = nullptr, const char* field_name = nullptr, const char* bases = nullptr, int index = -1) :
         GLUniformLocation{variable_name, field_name, bases, index} {}
