@@ -168,12 +168,15 @@ namespace gl {
 
 		namespace main_render_pass {
 			GLProgram program;
+
 			GLMatrix4Uniform model{"model"};
 			GLMatrix4Uniform view{"view"};
 			GLMatrix4Uniform projection{"projection"};
 			GLVector3Uniform camera_position{"eyePosition"};
 
-			GLTextureUniform texture{"theTexture"};
+			GLTextureUniform albedo_map{"albedo_map"};
+			GLTextureUniform normal_map{"normal_map"};
+
 			GLFloatUniform shininess{"material", "shininess"};
 			GLFloatUniform specular_intensity{"material", "specularIntensity"};
 
@@ -197,7 +200,9 @@ namespace gl {
 				projection.setLocation(program.id);
 				camera_position.setLocation(program.id);
 
-				texture.setLocation(program.id);
+				albedo_map.setLocation(program.id);
+				normal_map.setLocation(program.id);
+
 				shininess.setLocation(program.id);
 				specular_intensity.setLocation(program.id);
 
@@ -239,28 +244,31 @@ namespace gl {
        
 				point_light_count.update(scene->counts.point_lights);
 				for (u8 i = 0; i < scene->counts.point_lights; i++) 
-					point_lights[i].update(scene->point_lights[i], i + 3);
+					point_lights[i].update(scene->point_lights[i], i + 4);
 
 				spot_light_count.update(scene->counts.spot_lights);
 				for (u8 i = 0; i < scene->counts.spot_lights; i++) 
-					spot_lights[i].update(scene->spot_lights[i], MAX_POINT_LIGHTS + i + 3);
+					spot_lights[i].update(scene->spot_lights[i], MAX_POINT_LIGHTS + i + 4);
 
 				directional_light.update(scene->directional_lights[0]);
-				directional_shadow_pass::shadow_map.read(GL_TEXTURE2);
+				directional_shadow_pass::shadow_map.read(GL_TEXTURE3);
 
-				texture.update(1);
-				directional_light.shadow_map_texture.update(2);
+				albedo_map.update(1);
+				normal_map.update(2);
+				directional_light.shadow_map_texture.update(3);
 
 				
 				for (int i = 0; i < scene->counts.geometries; i++)
 				{
 					const Geometry &geo{scene->geometries[i]};
 					const Material &material{scene->materials[geo.material_id]};
-					const GLTexture &texture{textures[material.texture_ids[0]]};
+					const GLTexture &albedo_map_texture{textures[material.texture_ids[0]]};
+					const GLTexture &normal_map_texture{textures[material.texture_ids[1]]};
 					const GLMesh &mesh{meshes[geo.id]};
 
 					model.update(model_matrices[i]);
-					texture.bind();
+					albedo_map_texture.bind(GL_TEXTURE1);
+					normal_map_texture.bind(GL_TEXTURE2);
 					glUniform1f(specular_intensity.id, material.specular_intensity);
 					glUniform1f(shininess.id, material.shininess);
 					mesh.render();
@@ -333,15 +341,18 @@ namespace gl {
 			glEnable(GL_CULL_FACE);
 
 			if (main_pass) main_render_pass::render(viewport);
-			if (wireframe && mesh_edges)
-				for (int i = 0; i < scene->counts.geometries; i++)
-					if (scene->geometries[i].type == GeometryType_Mesh)
-						mesh_edges[scene->geometries[i].id].draw(model_matrices[i] * view_projection_matrix, scene->geometries[i].color);
-			if (normals && mesh_normals)
-				for (int i = 0; i < scene->counts.geometries; i++)
-					if (scene->geometries[i].type == GeometryType_Mesh)
-						mesh_normals[scene->geometries[i].id].draw(model_matrices[i] * view_projection_matrix, scene->geometries[i].color);
-							
+			if (wireframe && mesh_edges || 
+				normals && mesh_normals) {
+				mat4 mvp;
+				for (int i = 0; i < scene->counts.geometries; i++) {
+					const Geometry &geo{scene->geometries[i]};
+					if (geo.type == GeometryType_Mesh) {
+						mvp = model_matrices[i] * view_projection_matrix;
+						if (wireframe && mesh_edges) mesh_edges[geo.id].draw(mvp, geo.color);
+						if (normals && mesh_normals) mesh_normals[geo.id].draw(mvp, geo.color);
+					}
+				}
+			}
 
 			if (selection) drawSelection(*selection, view_projection_matrix, scene->meshes);
 			

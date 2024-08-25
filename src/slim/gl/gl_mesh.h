@@ -7,7 +7,7 @@ struct TriangleVertex {
     vec3 position;
     vec2 uv;
     vec3 normal;
-//    vec3 tangent;
+    vec3 tangent;
 };
 
 
@@ -19,7 +19,7 @@ void loadVertices(const Mesh &mesh, Vertex *vertices, bool flip_winding_order = 
             vertices->position = mesh.vertex_positions[mesh.vertex_position_indices[triangle_index].ids[v]];
             if (mesh.uvs_count)      vertices->uv       = mesh.vertex_uvs[      mesh.vertex_uvs_indices[     triangle_index].ids[v]];
             if (mesh.normals_count)  vertices->normal   = mesh.vertex_normals[  mesh.vertex_normal_indices[  triangle_index].ids[v]];
-//            if (mesh.tangents_count) vertices->tangent  = mesh.vertex_tangents[ mesh.vertex_tangent_indices[ triangle_index].ids[v]];
+            if (mesh.tangents_count) vertices->tangent  = mesh.vertex_tangents[ mesh.vertex_tangent_indices[ triangle_index].ids[v]];
         }
     }
 }
@@ -108,6 +108,8 @@ struct GLMesh {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), (void*)(sizeof(vec3) + sizeof(vec2)));
         glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), (void*)(sizeof(vec3) + sizeof(vec2) + sizeof(vec3)));
+        glEnableVertexAttribArray(3);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         if (IBO)

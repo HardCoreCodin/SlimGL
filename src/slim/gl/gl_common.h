@@ -19,9 +19,9 @@ void main()
     const char* uniform_color_fragment_shader = R"(#version 330
 out vec4 out_color;
 
-uniform vec3 line_color;
+uniform vec3 uniform_color;
 
 void main(void) {
-	out_color = vec4(line_color, 1.0);
+	out_color = vec4(uniform_color, 1.0);
 })";
 }

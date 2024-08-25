@@ -40,7 +40,7 @@ namespace gl {
 
     struct GLDirectionalLight : GLBaseLight {
         GLVector3Uniform direction;
-        GLTextureUniform shadow_map_texture{"directionalShadowMap"};
+        GLTextureUniform shadow_map_texture{"shadow_map"};
         GLMatrix4Uniform transform{"directionalLightTransform"};
         char _base_light_namespace[64] = {""};
 

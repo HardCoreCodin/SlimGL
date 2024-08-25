@@ -7,26 +7,25 @@
 #include "../math/mat3.h"
 
 
-namespace gl {
-    const char* full_screen_triangle_vertex_shader = R"(#version 330
+namespace gl {    
+    namespace skybox {
+        const char* vertex_shader = R"(#version 330
 out vec3 pos;
+uniform mat3 camera_ray_matrix;
 
 void main() {
     vec2 vertices[3] = vec2[3](vec2(-1, -1), vec2(3, -1), vec2(-1, 3));
     gl_Position = vec4(vertices[gl_VertexID], 0, 1);
-    pos = vec3(vertices[gl_VertexID], 1);
+    pos = camera_ray_matrix * vec3(vertices[gl_VertexID], 1);
 })";
-    
-    namespace skybox {
         const char* fragment_shader = R"(#version 330
 in vec3 pos;
 out vec4 col;
-uniform mat3 camera_ray_matrix;
 uniform samplerCube skybox;
 
 void main()
 {
-	col = texture(skybox, camera_ray_matrix * pos);
+	col = texture(skybox, pos);
 })";
 
         GLMatrix3Uniform camera_ray_matrix_uniform{"camera_ray_matrix"};
@@ -39,7 +38,7 @@ void main()
             texture.load(skybox_images);
             
             GLShader shaders[] = {
-                {GL_VERTEX_SHADER, nullptr, full_screen_triangle_vertex_shader},
+                {GL_VERTEX_SHADER, nullptr, vertex_shader},
                 {GL_FRAGMENT_SHADER, nullptr, fragment_shader}
             };
             program.compile(shaders, 2);

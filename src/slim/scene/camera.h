@@ -59,26 +59,21 @@ private:
 struct CameraRayProjection {
     mat3 inverted_camera_rotation;
     vec3 start, right, down, camera_position;
-    vec2 C_start;
-    f32 squared_distance_to_projection_plane;
-    f32 sample_size;
 
     INLINE_XPU f32 getDepthAt(vec3 &position) const { return (inverted_camera_rotation * (position - camera_position)).z; }
     INLINE_XPU vec3 getRayDirectionAt(i32 x, i32 y) const { return start + down*y + right*x; }
 
     void reset(const Camera &camera, const Dimensions &dim, bool antialias) {
-        sample_size = antialias ? 0.5f : 1.0f;
-        squared_distance_to_projection_plane = dim.h_height * camera.focal_length;
-        C_start.x = (sample_size * 0.5f) - dim.h_width;
-        C_start.y = dim.h_height - (sample_size * 0.5f);
+        f32 sample_size = antialias ? 0.5f : 1.0f;
+        f32 x = (sample_size * 0.5f) - dim.h_width;
+        f32 y = dim.h_height - (sample_size * 0.5f);
 
         inverted_camera_rotation = camera.orientation.inverted();
         camera_position = camera.position;
         down = -camera.orientation.up      * sample_size;
         right = camera.orientation.right   * sample_size;
-        start = camera.orientation.right   * C_start.x +
-                camera.orientation.up      * C_start.y +
-                camera.orientation.forward * squared_distance_to_projection_plane;
-        squared_distance_to_projection_plane *= squared_distance_to_projection_plane;
+        start = camera.orientation.right   * x +
+                camera.orientation.up      * y +
+                camera.orientation.forward * dim.h_height * camera.focal_length;
     }
 };

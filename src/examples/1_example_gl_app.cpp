@@ -1,5 +1,4 @@
 #include "../slim/core/transform.h"
-#include "../slim/math/mat4_constructurs.h"
 #include "../slim/viewport/navigation.h"
 #include "../slim/viewport/frustum.h"
 #include "../slim/scene/selection.h"
@@ -11,7 +10,6 @@
 
 #include "../slim/serialization/image.h"
 
-using namespace gl;
 
 enum ImageID {
     Floor_Albedo,
@@ -49,7 +47,8 @@ constexpr int MAX_POINT_LIGHTS = 3;
 constexpr int MAX_SPOT_LIGHTS = 3;
 
 struct ExampleGLApp : SlimApp {
-    Camera camera{{0, 0, 0}, {0, 0, 0}};
+    Camera camera{{-25 * DEG_TO_RAD, 0, 0}, {0, 7, -11}}, *cameras{&camera};
+
     CameraRayProjection camera_ray_projection;
 
     Canvas canvas;
@@ -81,7 +80,7 @@ struct ExampleGLApp : SlimApp {
     Material floor_material{0.3f, 4, 0.7f, 0.9f, flags, 2, {Floor_Albedo, Floor_Normal}};
     Material dog_material{0.3f, 4, 1.0f, 0.6f, flags, 2, {Dog_Albedo, Dog_Normal}};
     Material *materials{&floor_material};
-    //4.0f, 256
+
     enum MesheID { Dog, Dragon, Floor, MeshCount };
 
     Mesh dog_mesh;
@@ -93,8 +92,9 @@ struct ExampleGLApp : SlimApp {
         String::getFilePath("dog.mesh"   ,mesh_file_string_buffers[Dog   ],__FILE__),
         String::getFilePath("dragon.mesh",mesh_file_string_buffers[Dragon],__FILE__)
     };
+        OrientationUsingQuaternion rot{0, -45 * DEG_TO_RAD, 0};
 
-    Geometry dog   {{{0, -45 * DEG_TO_RAD, 0},{4, 2.1f, 3}, 0.8f},
+    Geometry dog   {{rot,{4, 2.1f, 3}, 0.8f},
                     GeometryType_Mesh, DogMaterial,   Dog};
     Geometry dragon{{{},{-12, 2, -3}},
                     GeometryType_Mesh, DogMaterial,      Dragon};
@@ -126,7 +126,7 @@ struct ExampleGLApp : SlimApp {
     }
 
     void OnRender() override {
-        renderer::render(viewport, &selection, true, wireframe, normals);
+        gl::renderer::render(viewport, &selection, true, wireframe, normals);
     }
 
     void OnInit() override {
@@ -140,7 +140,7 @@ struct ExampleGLApp : SlimApp {
         updateProjection();
 
         scene.counts.meshes = MeshCount;
-        renderer::init(scene, skybox_images, images, 4, true, true);
+        gl::renderer::init(scene, skybox_images, images, 4, true, true);
     }
 
     void OnWindowResize(u16 width, u16 height) override {

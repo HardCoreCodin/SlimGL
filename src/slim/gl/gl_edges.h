@@ -47,7 +47,7 @@ void main() {
     namespace quad {
         GLProgram program;
         GLMatrix4Uniform mvp{"mvp"};
-        GLVector3Uniform line_color{"line_color"};
+        GLVector3Uniform line_color{"uniform_color"};
         GLuint empty_vao;
 
         void init() { 
@@ -78,7 +78,7 @@ void main() {
     namespace cube {
         GLProgram program;
         GLMatrix4Uniform mvp{"mvp"};
-        GLVector3Uniform line_color{"line_color"};
+        GLVector3Uniform line_color{"uniform_color"};
         GLuint empty_vao;
 
         void init() { 
@@ -109,7 +109,7 @@ void main() {
     namespace edge {
         GLProgram program;
         GLMatrix4Uniform mvp{"mvp"};
-        GLVector3Uniform line_color{"line_color"};
+        GLVector3Uniform line_color{"uniform_color"};
         GLuint empty_vao;
 
         void init() { 
