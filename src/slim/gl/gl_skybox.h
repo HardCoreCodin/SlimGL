@@ -7,6 +7,18 @@
 #include "../math/mat3.h"
 
 
+union CubeMapSet {
+	struct {
+		CubeMapImages skybox;
+		CubeMapImages radiance;
+		CubeMapImages irradiance;
+	};
+	CubeMapImages array[3];
+
+    CubeMapSet() {}
+};
+
+
 namespace gl {    
     namespace skybox {
         const char* vertex_shader = R"(#version 330
@@ -31,11 +43,9 @@ void main()
         GLMatrix3Uniform camera_ray_matrix_uniform{"camera_ray_matrix"};
         GLProgram program;
         GLuint empty_vao;
-		GLCubeMapTexture texture;
-    
-        void init(CubeMapImages &skybox_images) {
+
+        void init() {
             if (program.id) return;
-            texture.load(skybox_images);
             
             GLShader shaders[] = {
                 {GL_VERTEX_SHADER, nullptr, vertex_shader},
@@ -46,7 +56,7 @@ void main()
             glGenVertexArrays(1, &empty_vao);
         }
 
-        void draw(const mat3 &camera_ray_matrix) {
+        void draw(const GLCubeMapTexture &texture, const mat3 &camera_ray_matrix) {
             glDepthMask(GL_FALSE);
 
             glUseProgram(program.id);

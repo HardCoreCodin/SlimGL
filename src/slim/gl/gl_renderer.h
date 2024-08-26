@@ -19,6 +19,14 @@ namespace gl {
 	constexpr int MAX_SPOT_LIGHTS = 3;
 
 	namespace renderer {
+		namespace settings {
+			bool main_pass = true;
+			bool wireframe = false;
+			bool normals = false;
+			u8 cube_map_set_index = 0;
+			float IBL_intensity = 1.0f;
+		};
+
 		const Scene *scene = nullptr;
 		GLMesh *meshes = nullptr;
 		GLEdges *mesh_edges = nullptr;
@@ -29,6 +37,15 @@ namespace gl {
 		mat4 projection_matrix;
 		mat4 view_projection_matrix;
 		mat4 *model_matrices = nullptr;
+
+		GLCubeMapTexture *skybox_maps = nullptr;
+		GLCubeMapTexture *radiance_maps = nullptr;
+		GLCubeMapTexture *irradiance_maps = nullptr;
+
+		GLCubeMapTexture *skybox_map = nullptr;
+		GLCubeMapTexture *radiance_map = nullptr;
+		GLCubeMapTexture *irradiance_map = nullptr;
+
 
 		namespace directional_shadow_pass {
 			GLProgram program;
@@ -174,10 +191,13 @@ namespace gl {
 			GLMatrix4Uniform projection{"projection"};
 			GLVector3Uniform camera_position{"eyePosition"};
 
+			GLFloatUniform IBL{"IBL_intensity"};
 			GLMaterial material{"material"};
 			GLTextureUniform albedo_map{"albedo_map"};
 			GLTextureUniform normal_map{"normal_map"};
-
+			GLTextureUniform radiance_map_texture{"radiance_map"};
+			GLTextureUniform irradiance_map_texture{"irradiance_map"};
+    
 			GLDirectionalLight directional_light{"directionalLight", "base"};
 			GLIntUniform point_light_count{"pointLightCount"};
 			GLIntUniform spot_light_count{"spotLightCount"};
@@ -200,7 +220,10 @@ namespace gl {
 
 				albedo_map.setLocation(program.id);
 				normal_map.setLocation(program.id);
+				radiance_map_texture.setLocation(program.id);
+				irradiance_map_texture.setLocation(program.id);
 
+				IBL.setLocation(program.id);
 				material.init(program.id);
 
 				point_light_count.setLocation(program.id);
@@ -228,10 +251,13 @@ namespace gl {
 
 			void render(const Viewport &viewport) {
 				const Camera &camera{*viewport.camera};
-				mat3 camera_ray_matrix = camera.orientation;
-				camera_ray_matrix.Z *= camera.focal_length;
-				camera_ray_matrix.X /= viewport.frustum.projection.params.height_over_width;
-				skybox::draw(camera_ray_matrix);
+				
+				if (skybox_map) {
+					mat3 camera_ray_matrix = camera.orientation;
+					camera_ray_matrix.Z *= camera.focal_length;
+					camera_ray_matrix.X /= viewport.frustum.projection.params.height_over_width;
+					skybox::draw(*skybox_map, camera_ray_matrix);
+				}
 
 				glUseProgram(program.id);
         
@@ -241,19 +267,27 @@ namespace gl {
        
 				point_light_count.update(scene->counts.point_lights);
 				for (u8 i = 0; i < scene->counts.point_lights; i++) 
-					point_lights[i].update(scene->point_lights[i], i + 4);
+					point_lights[i].update(scene->point_lights[i], i + 6);
 
 				spot_light_count.update(scene->counts.spot_lights);
 				for (u8 i = 0; i < scene->counts.spot_lights; i++) 
-					spot_lights[i].update(scene->spot_lights[i], MAX_POINT_LIGHTS + i + 4);
+					spot_lights[i].update(scene->spot_lights[i], MAX_POINT_LIGHTS + i + 6);
 
 				directional_light.update(scene->directional_lights[0]);
-				directional_shadow_pass::shadow_map.read(GL_TEXTURE3);
+				directional_shadow_pass::shadow_map.read(GL_TEXTURE5);
 
-				albedo_map.update(1);
-				normal_map.update(2);
-				directional_light.shadow_map_texture.update(3);
+				if (settings::IBL_intensity != 0.0f && radiance_map && irradiance_map) {
+					IBL.update(settings::IBL_intensity);
+					radiance_map_texture.update(1);
+					irradiance_map_texture.update(2);
+					radiance_map->bind(GL_TEXTURE1);
+					irradiance_map->bind(GL_TEXTURE2);
+				}
 
+				albedo_map.update(3);
+				normal_map.update(4);
+				directional_light.shadow_map_texture.update(5);
+				
 				
 				for (int i = 0; i < scene->counts.geometries; i++)
 				{
@@ -265,8 +299,8 @@ namespace gl {
 
 					model.update(model_matrices[i]);
 					material.update(geo_material);
-					albedo_map_texture.bind(GL_TEXTURE1);
-					normal_map_texture.bind(GL_TEXTURE2);
+					albedo_map_texture.bind(GL_TEXTURE3);
+					normal_map_texture.bind(GL_TEXTURE4);
 					mesh.render();
 				}
 				
@@ -278,7 +312,7 @@ namespace gl {
 		}
 		
 
-		void init(Scene &main_scene, CubeMapImages &skybox_images, RawImage *texture_images, u32 texture_count, bool wireframe = false, bool normals = false) {			
+		void init(Scene &main_scene, CubeMapSet *cube_map_sets, u32 cube_map_sets_count, RawImage *texture_images, u32 texture_count, bool wireframe = false, bool normals = false) {			
 			scene = &main_scene;
 			model_matrices = new mat4[main_scene.counts.geometries];
 			meshes = new GLMesh[main_scene.counts.meshes];
@@ -305,26 +339,38 @@ namespace gl {
 				}
 			}
 
-
-			textures = new GLTexture[texture_count];
-			for (int i = 0; i < texture_count; i++)
-				new(&textures[i])GLTexture(texture_images[i]);
+			if (texture_images && texture_count) {
+				textures = new GLTexture[texture_count];
+				for (int i = 0; i < texture_count; i++)
+					new(&textures[i])GLTexture(texture_images[i]);
+			}
 			
-			skybox::init(skybox_images);
+			if (cube_map_sets && cube_map_sets_count) {
+				skybox_maps = new GLCubeMapTexture[cube_map_sets_count];
+				radiance_maps = new GLCubeMapTexture[cube_map_sets_count];
+				irradiance_maps = new GLCubeMapTexture[cube_map_sets_count];
+				for (int i = 0; i < cube_map_sets_count; i++) {
+					skybox_maps[i].load(cube_map_sets[i].skybox);
+					radiance_maps[i].load(cube_map_sets[i].radiance);
+					irradiance_maps[i].load(cube_map_sets[i].irradiance);
+				}
+			}
+
+			skybox::init();
 			main_render_pass::init(main_scene);
 
 			glEnable(GL_LINE_SMOOTH);
 			glHint(GL_LINE_SMOOTH_HINT,  GL_NICEST);
 		}
 		
-		void render(const Viewport &viewport, Selection *selection = nullptr, bool main_pass = true, bool wireframe = false, bool normals = false) {
+		void render(const Viewport &viewport, Selection *selection = nullptr) {
 			// Init matrices
 			view_matrix = Mat4(*viewport.camera).inverted();
 			projection_matrix = Mat4(viewport.frustum.projection);
 			view_projection_matrix = view_matrix * projection_matrix;
 			for (int i = 0; i < scene->counts.geometries; i++) model_matrices[i] = Mat4(scene->geometries[i].transform); 
 
-			if (!wireframe) {
+			if (!settings::wireframe) {
 				// Generate shadow maps
 				directional_shadow_pass::render(scene->directional_lights[0].shadowMapMatrix());
 				for (size_t i = 0; i < scene->counts.point_lights; i++) omni_directional_shadow_pass::render(main_render_pass::point_lights[i], scene->point_lights[i]);
@@ -336,16 +382,20 @@ namespace gl {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glEnable(GL_CULL_FACE);
 
-			if (main_pass) main_render_pass::render(viewport);
-			if (wireframe && mesh_edges || 
-				normals && mesh_normals) {
+			skybox_map = skybox_maps ? &skybox_maps[settings::cube_map_set_index] : nullptr;
+			radiance_map = radiance_maps ? &radiance_maps[settings::cube_map_set_index] : nullptr;
+			irradiance_map = irradiance_maps ? &irradiance_maps[settings::cube_map_set_index] : nullptr;
+			
+			if (settings::main_pass) main_render_pass::render(viewport);
+			if (settings::wireframe && mesh_edges || 
+				settings::normals && mesh_normals) {
 				mat4 mvp;
 				for (int i = 0; i < scene->counts.geometries; i++) {
 					const Geometry &geo{scene->geometries[i]};
 					if (geo.type == GeometryType_Mesh) {
 						mvp = model_matrices[i] * view_projection_matrix;
-						if (wireframe && mesh_edges) mesh_edges[geo.id].draw(mvp, geo.color);
-						if (normals && mesh_normals) mesh_normals[geo.id].draw(mvp, geo.color);
+						if (settings::wireframe && mesh_edges) mesh_edges[geo.id].draw(mvp, geo.color);
+						if (settings::normals && mesh_normals) mesh_normals[geo.id].draw(mvp, geo.color);
 					}
 				}
 			}
