@@ -5,8 +5,8 @@
 #define UNIT_SPHERE_AREA_OVER_SIX ((4.0f*pi)/6.0f)
 #define ONE_OVER_PI (1.0f/pi)
 
-#define HAS_ALBEDO_MAP 1
-#define HAS_NORMAL_MAP 1
+#define HAS_ALBEDO_MAP uint(16)
+#define HAS_NORMAL_MAP uint(32)
 #define DRAW_DEPTH 4
 #define DRAW_POSITION 8
 #define DRAW_NORMAL 16
@@ -72,6 +72,12 @@ struct Material
     uint flags;
 };
 
+
+struct Radiance {
+	vec3 Fd;
+	vec3 Fs;
+};
+
 uniform int pointLightCount;
 uniform int spotLightCount;
 
@@ -81,11 +87,15 @@ uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
 uniform OmniShadowMap omniShadowMaps[MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS];
 
+uniform samplerCube radiance_map;
+uniform samplerCube irradiance_map;
+
 uniform sampler2D albedo_map;
 uniform sampler2D normal_map;
 uniform sampler2D shadow_map;
 
 uniform Material material;
+uniform float IBL_intensity;
 
 uniform vec3 eyePosition;
 
@@ -97,6 +107,7 @@ vec3 gridSamplingDisk[20] = vec3[]
    vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
    vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
 );
+
 
 float ggxTrowbridgeReitz_D(float roughness, float NdotH) { // NDF
     float a = roughness * roughness;
@@ -130,26 +141,25 @@ vec3 cookTorrance(float roughness, float NdotL, float NdotV, float NdotH, vec3 F
     )));
 }
 
-vec3 BRDF(vec3 albedo, float roughness, vec3 F0, float metalness, vec3 V, vec3 N, float NdotL, vec3 L) {
-    vec3 Fs = vec3(0.0);
-    vec3 Fd = albedo * ((1.0f - metalness) * ONE_OVER_PI);
-	float NdotV = dot(N, V);
-    if (NdotV <= 0.0f ||
-        roughness <= 0)
-        return Fs + Fd;
 
-    vec3 H = normalize(L + V);
-    float NdotH = clamp(dot(N, H), 0.0, 1.0);
-    float HdotL = clamp(dot(H, L), 0.0, 1.0);
-    vec3 F = schlickFresnel(HdotL, F0);
-    Fs = cookTorrance(roughness, NdotL, NdotV, NdotH, F);
-    Fd *= 1.0f - F;
-    return Fs + Fd;
+Radiance BRDF(vec3 albedo, vec3 V, vec3 N, float NdotL, vec3 L) {
+	Radiance rad;
+    rad.Fs = vec3(0.0);
+    rad.Fd = albedo * ((1.0f - material.metalness) * ONE_OVER_PI);
+	float NdotV = dot(N, V);
+    if (NdotV > 0.0f && material.roughness > 0) {
+		vec3 H = normalize(L + V);
+		float NdotH = clamp(dot(N, H), 0.0, 1.0);
+		float HdotL = clamp(dot(H, L), 0.0, 1.0);
+		vec3 F = schlickFresnel(HdotL, material.F0);
+		rad.Fs = cookTorrance(material.roughness, NdotL, NdotV, NdotH, F);
+		rad.Fd *= 1.0f - F;
+	}
+    
+	return rad;
 }
 
-vec3 shadeFromLight(Light light, vec3 L, vec3 N, vec3 albedo) {
-    //vec3 L = light.position - P;
-    
+vec3 shadeFromLight(Light light, vec3 L, vec3 N, vec3 albedo) {    
 	float NdotL = dot(L, N);
     if (NdotL <= 0.0f)
         return vec3(0.0f);
@@ -158,35 +168,10 @@ vec3 shadeFromLight(Light light, vec3 L, vec3 N, vec3 albedo) {
     NdotL /= Ld;
     vec3 V = normalize(eyePosition - FragPos);
 
-    vec3 brdf = BRDF(albedo, material.roughness, material.F0, material.metalness, V, N, NdotL, L);
-    return light.color * (brdf * NdotL * light.intensity);// / (Ld * Ld));
+    Radiance rad = BRDF(albedo, V, N, NdotL, L);
+    return (rad.Fd + rad.Fs) * light.color * light.intensity * NdotL;
 }
-/*
-vec4 CalcLightByDirection(Light light, vec3 direction, float shadowFactor, vec3 N)
-{
-	vec4 ambientColor = vec4(light.color, 1.0f) * light.ambientIntensity;
-	
-	float diffuseFactor = max(dot(N, normalize(direction)), 0.0f);
-	vec4 diffuseColor = vec4(light.color * light.diffuseIntensity * diffuseFactor, 1.0f);
-	
-	vec4 specularColor = vec4(0, 0, 0, 0);
-	
-	if(diffuseFactor > 0.0f)
-	{
-		vec3 fragToEye = normalize(eyePosition - FragPos);
-		vec3 reflectedVertex = normalize(reflect(direction, N));
-		
-		float specularFactor = dot(fragToEye, reflectedVertex);
-		if(specularFactor > 0.0f)
-		{
-			specularFactor = pow(specularFactor, material.shininess);
-			specularColor = vec4(light.color * material.specularIntensity * specularFactor, 1.0f);
-		}
-	}
 
-	return (ambientColor + (1.0 - shadowFactor) * (diffuseColor + specularColor));
-}
-*/
 float CalcPointShadowFactor(PointLight light, int shadowIndex)
 {
 	vec3 fragToLight = FragPos - light.position;
@@ -317,9 +302,21 @@ void main()
 	vec3 T = normalize(Tangent);
 	vec3 B = cross(T, N);
 	N = normalize(mat3(T, B, N) * decodeNormal(texture(normal_map, TexCoord)));
-	vec3 albedo = texture(albedo_map, TexCoord).rgb * material.albedo;
+	
+	vec3 albedo = material.albedo;
+	if ((material.flags & HAS_ALBEDO_MAP) != uint(0)) {
+		albedo *= texture(albedo_map, TexCoord).rgb;
+	}
+	
 	color = CalcDirectionalLight(DirectionalLightSpacePos, N, albedo);
 	color += CalcPointLights(N, albedo);
 	color += CalcSpotLights(N, albedo);
-	//color.xyz = vec3(material.roughness);
+    if (IBL_intensity != 0.0f) {
+		vec3 V = normalize(eyePosition - FragPos);
+		Radiance rad = BRDF(albedo, V, N, 1.0f, N);
+		rad.Fd *= texture(irradiance_map, N).rgb;
+		rad.Fs *= texture(radiance_map, normalize(reflect(V, N))).rgb;
+		color += vec4((rad.Fd + rad.Fs) * IBL_intensity, 1.0f);
+	}    
+	//color.xyz = toneMapped(color.xyz);
 }

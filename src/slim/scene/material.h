@@ -78,6 +78,8 @@ struct Material {
     u8 flags = 0;
     u8 texture_count = 0;
     u8 texture_ids[2] = {0, 0};
+    f32 metalness = 0.0f;
+    Color reflectivity{F0_Default};
     BRDFType brdf{BRDF_CookTorrance};
 
     f32 normal_magnitude = 1.0f;
@@ -85,9 +87,6 @@ struct Material {
 
     Color emission = 0.0f;
     f32 IOR = 1.0f;
-
-    Color reflectivity{F0_Default};
-    f32 metalness = 0.0f;
 
     INLINE_XPU bool isEmissive() const { return flags & MATERIAL_IS_EMISSIVE; }
     INLINE_XPU bool isReflective() const { return flags & MATERIAL_IS_REFLECTIVE; }

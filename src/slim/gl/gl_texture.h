@@ -3,6 +3,21 @@
 #include "./gl_base.h"
 
 
+union CubeMapImages {
+	struct {
+		RawImage pox_x;
+		RawImage neg_x;
+		RawImage pos_y;
+		RawImage neg_y;
+		RawImage pos_z;
+		RawImage neg_z;
+	};
+	RawImage array[6];
+
+    CubeMapImages() {}
+};
+
+
 struct GLTexture {
     GLuint id = 0;
     
@@ -46,20 +61,6 @@ struct GLTexture {
         glDeleteTextures(1, &id);
         id = 0;
     }
-};
-
-union CubeMapImages {
-	struct {
-		RawImage pox_x;
-		RawImage neg_x;
-		RawImage pos_y;
-		RawImage neg_y;
-		RawImage pos_z;
-		RawImage neg_z;
-	};
-	RawImage array[6];
-
-    CubeMapImages() {}
 };
 
 
