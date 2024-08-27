@@ -2,9 +2,8 @@
 
 <img src="SlimGL.gif"><br>
 
-Minimalist interactive OpenGL based render engine andapplication framework.<br>
-Written from scratch in C++.
-Focuses on simplicity, ease of use and setup with no dependencies and an optional single header file variant<br>
+Minimalist interactive OpenGL based render engine andapplication framework, written from scratch in C++.<br>
+Focuses on simplicity, ease of use and setup with no dependencies<br>
 <br>
 Built on: [SlimEngine++](https://github.com/HardCoreCodin/SlimEngineCpp) <br>
 
@@ -13,7 +12,7 @@ For related projects, see [my portfolio](https://hardcorecodin.com/portfolio).<b
 Features:
 -
 All features of <b>SlimEngine++</b> are available here as well.<br>
-Additional features include lighting and rendering facility:<br>
+Additional features include lighting and rendering facilit:<br>
 - PBR: Physically Based Rendering with Cook Torrance shading model
 - IBL: Image Based Lighting with Radiance and Irradiance Cube Maps
 - SkyBox and Reflection Cube Maps
@@ -90,8 +89,15 @@ Holding the `middle mouse button` and dragging the mouse scales the object.<br>
   - m : MipMap<br>
   - c : CubeMap<br>
 
-* <b><u>stb2image</b>:</u> Also provided is a separate CLI tool for converting many image file formats to `.image` files.<br>
-  Usage: `./bmp2texture src.png trg.image`<br>
+* <b><u>bmp2image</b>:</u> Also provided is a separate CLI tool for converting `.bmp` files to `.texture` files.<br>
+  Usage: `./bmp2image src.bmp trg.image`<br>
+  - f : Flip vertically<br>
+  - n : Normal map<br>
+  - l : Linear<br>
+  - b : Store as bytes per channel<br>
+
+* <b><u>stb2image</b>:</u> Also provided is a separate CLI tool for converting many image file formats to `.image` files using stb_image.<br>
+  Usage: `./stb2image src.png trg.image`<br>
   - f : Flip vertically<br>
   - n : Normal map<br>
   - l : Linear<br>
