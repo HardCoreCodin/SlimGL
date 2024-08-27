@@ -1,6 +1,6 @@
 <img src="SlimGL_logo.png" alt="SlimGL_logo"><br>
 
-<img src="SlimGL.gif"><br>
+<img src="SlimGL_Showcase.gif"><br>
 
 Minimalist interactive OpenGL based render engine andapplication framework, written from scratch in C++.<br>
 Focuses on simplicity, ease of use and setup with no dependencies<br>
@@ -19,6 +19,13 @@ Additional features include lighting and rendering facilit:<br>
 - Directional Lights with orthographic Directional Shadow Maps
 - Point Lights and Spot Lighs with Omni-Directional Shadow Maps (Cube Maps)
 - Normal Mapping
+
+
+<img src="SlimGL_IBL1.gif"><br>
+<img src="SlimGL_IBL2.gif"><br>
+<img src="SlimGL_DirectionalLight.gif"><br>
+<img src="SlimGL_SpotLights1.gif"><br>
+<img src="SlimGL_SpotLights2.gif"><br>
 
 Architecture:
 -
