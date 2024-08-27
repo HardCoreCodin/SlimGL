@@ -110,11 +110,6 @@ struct ExampleGLApp : SlimApp {
     Canvas canvas;
     Viewport viewport{canvas, &camera};
     
-    GLTexture floor_albedo{images[Floor_Albedo]};
-    GLTexture floor_normal{images[Floor_Normal]};
-    GLTexture dog_albedo{images[Dog_Albedo]};
-    GLTexture dog_normal{images[Dog_Normal]};
-
     DirectionalLight directional_light{
         {-60*DEG_TO_RAD, 30*DEG_TO_RAD, 0}, {1.0f, 0.83f, 0.7f}, 1.7f, {0, 25, -20}
     };
@@ -146,11 +141,10 @@ struct ExampleGLApp : SlimApp {
         String::getFilePath("dog.mesh"   ,mesh_file_string_buffers[Dog   ],__FILE__),
         String::getFilePath("dragon.mesh",mesh_file_string_buffers[Dragon],__FILE__)
     };
-    OrientationUsingQuaternion rot{0, -45 * DEG_TO_RAD, 0};
 
-    Geometry dog   {{rot,{4, 2.1f, 3}, 0.8f},             GeometryType_Mesh, DogMaterial,    Dog};
-    Geometry dragon{{{},{-12, 2, -3}},                    GeometryType_Mesh, DragonMaterial, Dragon};
-    Geometry floor{{{},{0, -3, 0}, {20.0f, 1.0f, 20.0f}}, GeometryType_Mesh, FloorMaterial,  Floor};
+    Geometry dog   {{{0, -45 * DEG_TO_RAD, 0},{4, 2.1f, 3}, 0.8f}, GeometryType_Mesh, DogMaterial,    Dog};
+    Geometry dragon{{{},{-12, 2, -3}},                             GeometryType_Mesh, DragonMaterial, Dragon};
+    Geometry floor{{{},{0, -3, 0}, {20.0f, 1.0f, 20.0f}},          GeometryType_Mesh, FloorMaterial,  Floor};
     Geometry *geometries{&dog};
 
     Scene scene{{3, 1, 1, 2, 2, MaterialCount, 0, MeshCount - 1},
