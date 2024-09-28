@@ -7,18 +7,6 @@
 #include "../math/mat3.h"
 
 
-union CubeMapSet {
-	struct {
-		CubeMapImages skybox;
-		CubeMapImages radiance;
-		CubeMapImages irradiance;
-	};
-	CubeMapImages array[3];
-
-    CubeMapSet() {}
-};
-
-
 namespace gl {    
     namespace skybox {
         const char* vertex_shader = R"(#version 330

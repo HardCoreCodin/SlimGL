@@ -1370,6 +1370,32 @@ struct FloatImage : Image<f32> {};
 struct ByteColorImage : Image<ByteColor> {};
 struct RawImage : Image<u8> {};
 
+union CubeMapImages {
+	struct {
+		RawImage pos_x;
+		RawImage neg_x;
+		RawImage pos_y;
+		RawImage neg_y;
+		RawImage pos_z;
+		RawImage neg_z;
+	};
+	RawImage array[6];
+
+    CubeMapImages() {}
+};
+
+union CubeMapSet {
+	struct {
+		CubeMapImages skybox;
+		CubeMapImages radiance;
+		CubeMapImages irradiance;
+	};
+	CubeMapImages array[3];
+
+    CubeMapSet() {}
+};
+
+
 #define PIXEL_SIZE (sizeof(Pixel))
 #define CANVAS_PIXELS_SIZE (MAX_WINDOW_SIZE * PIXEL_SIZE * 4)
 #define CANVAS_DEPTHS_SIZE (MAX_WINDOW_SIZE * sizeof(f32) * 4)

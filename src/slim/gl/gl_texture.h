@@ -3,19 +3,6 @@
 #include "./gl_base.h"
 
 
-union CubeMapImages {
-	struct {
-		RawImage pox_x;
-		RawImage neg_x;
-		RawImage pos_y;
-		RawImage neg_y;
-		RawImage pos_z;
-		RawImage neg_z;
-	};
-	RawImage array[6];
-
-    CubeMapImages() {}
-};
 
 
 struct GLTexture {
@@ -80,7 +67,7 @@ struct GLCubeMapTexture {
 	    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
         const RawImage *image = images.array;
-	    for (size_t i = 0; i < 6; i++, image++)
+	    for (int i = 0; i < 6; i++, image++)
 	    {
 		    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 
                 image->flags.alpha ? GL_RGBA : GL_RGB, 

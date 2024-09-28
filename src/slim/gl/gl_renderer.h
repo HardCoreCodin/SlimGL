@@ -73,7 +73,7 @@ namespace gl {
 				shadow_map.write();
 				glClear(GL_DEPTH_BUFFER_BIT);
 
-				for (int i = 0; i < scene->counts.geometries; i++)
+				for (u32 i = 0; i < scene->counts.geometries; i++)
 				{
 					mvp.update(model_matrices[i] * shadow_matrix);
 					meshes[scene->geometries[i].id].render();
@@ -173,7 +173,7 @@ namespace gl {
 				light_pos.update(light.position);
 				far_plane.update(light.shadow_bounds.far_distance);
 
-				for (int i = 0; i < scene->counts.geometries; i++)
+				for (u32 i = 0; i < scene->counts.geometries; i++)
 				{
 					mvp.update(model_matrices[i]);
 					meshes[scene->geometries[i].id].render();
@@ -234,17 +234,17 @@ namespace gl {
 			
 				if (main_scene.counts.point_lights > MAX_POINT_LIGHTS)
 					main_scene.counts.point_lights = MAX_POINT_LIGHTS;
-				for (int i = 0; i < main_scene.counts.point_lights; i++)
+				for (u32 i = 0; i < main_scene.counts.point_lights; i++)
 				{
-					new(&point_lights[i])GLPointLight{"pointLights", "base", i};
+					new(&point_lights[i])GLPointLight{"pointLights", "base", (int)i};
 					point_lights[i].init(program.id);
 				}
 
 				if (main_scene.counts.spot_lights > MAX_SPOT_LIGHTS)
 					main_scene.counts.spot_lights = MAX_SPOT_LIGHTS;
-				for (int i = 0; i < main_scene.counts.spot_lights; i++)
+				for (u32 i = 0; i < main_scene.counts.spot_lights; i++)
 				{
-					new(&spot_lights[i])GLSpotLight{"spotLights", "base", "base", i, MAX_POINT_LIGHTS};
+					new(&spot_lights[i])GLSpotLight{"spotLights", "base", "base", (int)i, MAX_POINT_LIGHTS};
 					spot_lights[i].init(program.id);
 				}
 			}
@@ -266,11 +266,11 @@ namespace gl {
 				camera_position.update(camera.position);
        
 				point_light_count.update(scene->counts.point_lights);
-				for (u8 i = 0; i < scene->counts.point_lights; i++) 
+				for (u32 i = 0; i < scene->counts.point_lights; i++) 
 					point_lights[i].update(scene->point_lights[i], i + 6);
 
 				spot_light_count.update(scene->counts.spot_lights);
-				for (u8 i = 0; i < scene->counts.spot_lights; i++) 
+				for (u32 i = 0; i < scene->counts.spot_lights; i++) 
 					spot_lights[i].update(scene->spot_lights[i], MAX_POINT_LIGHTS + i + 6);
 
 				directional_light.update(scene->directional_lights[0]);
@@ -289,7 +289,7 @@ namespace gl {
 				directional_light.shadow_map_texture.update(5);
 				
 				
-				for (int i = 0; i < scene->counts.geometries; i++)
+				for (u32 i = 0; i < scene->counts.geometries; i++)
 				{
 					const Geometry &geo{scene->geometries[i]};
 					const Material &geo_material{scene->materials[geo.material_id]};
@@ -304,8 +304,8 @@ namespace gl {
 					mesh.render();
 				}
 				
-				for (int i = 0; i < scene->counts.point_lights; i++) cube::draw(scene->point_lights[i].transformationMatrix() * view_projection_matrix, BrightCyan);
-				for (int i = 0; i < scene->counts.spot_lights; i++)  cube::draw(scene->spot_lights[i].transformationMatrix() * view_projection_matrix, BrightBlue);
+				for (u32 i = 0; i < scene->counts.point_lights; i++) cube::draw(scene->point_lights[i].transformationMatrix() * view_projection_matrix, BrightCyan);
+				for (u32 i = 0; i < scene->counts.spot_lights; i++)  cube::draw(scene->spot_lights[i].transformationMatrix() * view_projection_matrix, BrightBlue);
 				cube::draw(scene->directional_lights[0].transformationMatrix() * view_projection_matrix, BrightYellow);
 				cube::draw(scene->directional_lights[0].shadowBoundsMatrix() * view_projection_matrix);
 			}
@@ -319,12 +319,12 @@ namespace gl {
 			if (wireframe) mesh_edges = new GLEdges[main_scene.counts.meshes];
 			if (normals) mesh_normals = new GLEdges[main_scene.counts.meshes];
 			Mesh *mesh = scene->meshes;
-			for (int m = 0; m < main_scene.counts.meshes; m++, mesh++) {
+			for (u32 m = 0; m < main_scene.counts.meshes; m++, mesh++) {
 				meshes[m].create(*mesh);
 				if (wireframe) mesh_edges[m].load(mesh->edge_vertex_indices, mesh->edge_count, mesh->vertex_positions, mesh->vertex_count);
 				if (normals) {
 					vec3 *normal_edges = new vec3[mesh->triangle_count * 6];
-					for (int i = 0; i < mesh->triangle_count; i++) {
+					for (u32 i = 0; i < mesh->triangle_count; i++) {
 						auto &position_ids = mesh->vertex_position_indices[i];
 						auto &normal_ids = mesh->vertex_normal_indices[i];
 						normal_edges[i * 6 + 0] = mesh->vertex_positions[position_ids.v1];
@@ -341,7 +341,7 @@ namespace gl {
 
 			if (texture_images && texture_count) {
 				textures = new GLTexture[texture_count];
-				for (int i = 0; i < texture_count; i++)
+				for (u32 i = 0; i < texture_count; i++)
 					new(&textures[i])GLTexture(texture_images[i]);
 			}
 			
@@ -349,7 +349,7 @@ namespace gl {
 				skybox_maps = new GLCubeMapTexture[cube_map_sets_count];
 				radiance_maps = new GLCubeMapTexture[cube_map_sets_count];
 				irradiance_maps = new GLCubeMapTexture[cube_map_sets_count];
-				for (int i = 0; i < cube_map_sets_count; i++) {
+				for (u32 i = 0; i < cube_map_sets_count; i++) {
 					skybox_maps[i].load(cube_map_sets[i].skybox);
 					radiance_maps[i].load(cube_map_sets[i].radiance);
 					irradiance_maps[i].load(cube_map_sets[i].irradiance);
@@ -368,7 +368,7 @@ namespace gl {
 			view_matrix = Mat4(*viewport.camera).inverted();
 			projection_matrix = Mat4(viewport.frustum.projection);
 			view_projection_matrix = view_matrix * projection_matrix;
-			for (int i = 0; i < scene->counts.geometries; i++) model_matrices[i] = Mat4(scene->geometries[i].transform); 
+			for (u32 i = 0; i < scene->counts.geometries; i++) model_matrices[i] = Mat4(scene->geometries[i].transform); 
 
 			if (!settings::wireframe) {
 				// Generate shadow maps
@@ -390,7 +390,7 @@ namespace gl {
 			if (settings::wireframe && mesh_edges || 
 				settings::normals && mesh_normals) {
 				mat4 mvp;
-				for (int i = 0; i < scene->counts.geometries; i++) {
+				for (u32 i = 0; i < scene->counts.geometries; i++) {
 					const Geometry &geo{scene->geometries[i]};
 					if (geo.type == GeometryType_Mesh) {
 						mvp = model_matrices[i] * view_projection_matrix;
