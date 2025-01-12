@@ -32,6 +32,18 @@ INLINE_XPU mat3 Mat3(const mat4 &m) {
     };
 }
 
+INLINE_XPU mat3 Mat3(const vec2 &translation, f32 rotation, const vec2 &scale) {
+    mat3 rotation_matrix{};
+    mat3 translation_matrix{};
+    mat3 scale_matrix{};
+    rotation_matrix.setToRotationAroundZ(rotation);
+    translation_matrix.Z.x = translation.x;
+    translation_matrix.Z.y = translation.y;
+    scale_matrix.X.x = scale.x;
+    scale_matrix.Y.y = scale.y;
+    return translation_matrix * rotation_matrix * scale_matrix;
+}
+
 INLINE_XPU quat Quat(const mat3 &m) {
     f32 fourXSquaredMinus1 = m.X.x - m.Y.y - m.Z.z;
     f32 fourYSquaredMinus1 = m.Y.y - m.X.x - m.Z.z;

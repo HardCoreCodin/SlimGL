@@ -1,7 +1,7 @@
 #pragma once
 
-#include "./core/base.h"
-#include "./gl/glad.h"
+#include "core/base.h"
+#include "glad.h"
 
 struct SlimApp {
     timers::Timer update_timer, render_timer;

@@ -9,17 +9,28 @@ enum ImageID {
     Dog_Albedo,
     Dog_Normal,
 
+    TiledFontImage,
+    FontImage,
+
     ImageCount
 };
 
-RawImage images[4];
+RawImage images[ImageCount];
 const char *image_file_names[ImageCount] {
     "floor_albedo.raw_image",
     "floor_normal.raw_image",
     "dog_albedo.raw_image",
-    "dog_normal.raw_image"
+    "dog_normal.raw_image",
+    "font.raw_image",
+    "victormono_font.raw_image"
 };
 ImagePack<u8> image_pack{ImageCount, images, image_file_names, __FILE__};
+
+// RawImage font_images[1];
+// const char *font_image_file_names[1] {
+//     "font.raw_image",
+// };
+// ImagePack<u8> font_image_pack{1, font_images, font_image_file_names, __FILE__};
 
 constexpr u8 CUBE_MAP_SETS_COUNT = 2;
 

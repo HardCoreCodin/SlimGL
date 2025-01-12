@@ -551,6 +551,24 @@ struct vec2 {
         return N.scaleAdd(-2 * dot(N), *this);
     }
 
+    INLINE_XPU void rotate(f32 angle) {
+        f32 c = cos(angle);
+        f32 s = sin(angle);
+        f32 _x = x;
+        f32 _y = y;
+        x = c*_x + s*_y;
+        y = c*_y - s*_x;
+    }
+
+    INLINE_XPU vec2 rotated_by(f32 angle) const {
+        f32 c = cos(angle);
+        f32 s = sin(angle);
+        return {
+            c*x + s*y,
+            c*y - s*x
+        };
+    }
+
     INLINE_XPU vec2 clamped() const {
         return {
             clampedValue(x),

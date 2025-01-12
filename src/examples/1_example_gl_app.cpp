@@ -1,11 +1,13 @@
 #include "../slim/app.h"
 #include "../slim/core/transform.h"
+#include "../slim/core/text.h"
 #include "../slim/viewport/navigation.h"
 #include "../slim/viewport/frustum.h"
 #include "../slim/scene/selection.h"
 #include "../slim/draw/selection.h"
 #include "../slim/serialization/image.h"
-#include "../slim/gl/gl_renderer.h"
+#include "../slim/serialization/font.h"
+#include "gl_renderer.h"
 
 #include "./images.h"
 
@@ -34,7 +36,7 @@ struct ExampleGLApp : SlimApp {
     enum MaterialID { FloorMaterial, DogMaterial, DragonMaterial, MaterialCount };
 
     u8 flags{MATERIAL_HAS_NORMAL_MAP | MATERIAL_HAS_ALBEDO_MAP};
-    Material floor_material{0.6f, 0.2f, flags, 2, {Floor_Albedo, Floor_Normal}};
+    Material floor_material{0.6f, 0.2f, flags, 2, {FontImage, Floor_Normal}};
     Material dog_material{1.0f, 0.3f, flags, 2, {Dog_Albedo, Dog_Normal}};
     Material dragon_material{1.0f, 0.3f, 0, 0, {Dog_Albedo, Dog_Normal}, 1.0f, F0_Gold};
     Material *materials{&floor_material};
@@ -51,7 +53,7 @@ struct ExampleGLApp : SlimApp {
         String::getFilePath("dragon.mesh",mesh_file_string_buffers[Dragon],__FILE__)
     };
 
-    Geometry dog   {{{0, -45 * DEG_TO_RAD, 0},{4, 2.1f, 3}, 0.8f}, GeometryType_Mesh, DogMaterial,    Dog};
+    Geometry dog   {{}, GeometryType_Mesh, DogMaterial,    Dog};
     Geometry dragon{{{},{-12, 2, -3}},                             GeometryType_Mesh, DragonMaterial, Dragon};
     Geometry floor{{{},{0, -3, 0}, {20.0f, 1.0f, 20.0f}},          GeometryType_Mesh, FloorMaterial,  Floor};
     Geometry *geometries{&dog};
@@ -62,6 +64,10 @@ struct ExampleGLApp : SlimApp {
 
     SceneTracer scene_tracer{scene.counts.geometries, scene.mesh_stack_size};
     Selection selection{scene, scene_tracer, camera_ray_projection};
+
+    Font font;
+    Text2D hellow_world{font, String("Hello, World"), Color(1.0f, 0.0f, 0.0f), Transform2D{vec2{-150.0f, -100.0f}}};
+    Text2D foo_bar{font, String("Foo Bar"), Color(0.0f, 1.0f, 0.0f), Transform2D{vec2{-50.0f, 100.0f}}};
 
     void OnInit() override {
         window::width = 640;
@@ -74,7 +80,10 @@ struct ExampleGLApp : SlimApp {
         viewport.frustum.updateProjection(camera.focal_length, viewport.dimensions.height_over_width);
 
         scene.counts.meshes = MeshCount;
-        gl::renderer::init(scene, cube_map_sets.array, CUBE_MAP_SETS_COUNT, images, 4, true, true);
+
+        load<Font>(font, (char*)"victormono.font");
+
+        gl::renderer::init(scene, cube_map_sets.array, CUBE_MAP_SETS_COUNT, images, ImageCount, &hellow_world, 2, true, true);
     }
 
     void OnUpdate(f32 delta_time) override {

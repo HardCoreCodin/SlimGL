@@ -2,7 +2,7 @@
 
 #include "../math/mat4_constructurs.h"
 #include "../scene/selection.h"
-#include "../gl/gl_edges.h"
+#include "gl_edges.h"
 
 
 void drawSelection(Selection &selection, const mat4 &view_projection_matrix, const Mesh *meshes) {

@@ -2,6 +2,7 @@
 
 #include "./base.h"
 
+
 struct String {
     u32 length;
     char *char_ptr;

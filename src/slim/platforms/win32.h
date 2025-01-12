@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define WIN32_LEAN_AND_MEAN
 #define WIN_32_EXTRA_LEAN
-#include "../gl/glad.c"
+#include "glad.c"
 #include "./win32_base.h"
 
 #define GET_X_LPARAM(lp)                        ((int)(short)LOWORD(lp))
