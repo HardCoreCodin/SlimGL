@@ -36,7 +36,7 @@ struct ExampleGLApp : SlimApp {
     enum MaterialID { FloorMaterial, DogMaterial, DragonMaterial, MaterialCount };
 
     u8 flags{MATERIAL_HAS_NORMAL_MAP | MATERIAL_HAS_ALBEDO_MAP};
-    Material floor_material{0.6f, 0.2f, flags, 2, {FontImage, Floor_Normal}};
+    Material floor_material{0.6f, 0.2f, flags, 2, {Floor_Albedo, Floor_Normal}};
     Material dog_material{1.0f, 0.3f, flags, 2, {Dog_Albedo, Dog_Normal}};
     Material dragon_material{1.0f, 0.3f, 0, 0, {Dog_Albedo, Dog_Normal}, 1.0f, F0_Gold};
     Material *materials{&floor_material};
@@ -66,8 +66,8 @@ struct ExampleGLApp : SlimApp {
     Selection selection{scene, scene_tracer, camera_ray_projection};
 
     Font font;
-    Text2D hellow_world{font, String("Hello, World"), Color(1.0f, 0.0f, 0.0f), Transform2D{vec2{-150.0f, -100.0f}}};
-    Text2D foo_bar{font, String("Foo Bar"), Color(0.0f, 1.0f, 0.0f), Transform2D{vec2{-50.0f, 100.0f}}};
+    Text hellow_world{font, String("Hello, World"), Color(1.0f, 0.0f, 0.0f), Transform2D{vec2{0.0f, 0.0f}, 0.0f, {50.0f, 50.0f}}};
+    Text foo_bar{font, String("Foo Bar"), Color(0.0f, 1.0f, 0.0f), Transform{{},{-12, 7, -3},{1.0f}}};
 
     void OnInit() override {
         window::width = 640;
@@ -81,7 +81,7 @@ struct ExampleGLApp : SlimApp {
 
         scene.counts.meshes = MeshCount;
 
-        load<Font>(font, (char*)"victormono.font");
+        load<Font>(font, (char*)"arialbd.font");
 
         gl::renderer::init(scene, cube_map_sets.array, CUBE_MAP_SETS_COUNT, images, ImageCount, &hellow_world, 2, true, true);
     }

@@ -1,0 +1,12 @@
+
+#file(GLOB_RECURSE MSDFGEN_CORE_HEADERS RELATIVE ${CMAKE_SOURCE_DIR}/src/font_loaders/msdf "core/*.h" "core/*.hpp")
+#file(GLOB_RECURSE MSDFGEN_CORE_SOURCES RELATIVE ${CMAKE_SOURCE_DIR}/src/font_loaders/msdf "core/*.cpp")
+#file(GLOB_RECURSE MSDFGEN_EXT_HEADERS RELATIVE ${CMAKE_SOURCE_DIR}/src/font_loaders/msdf "ext/*.h" "ext/*.hpp")
+#file(GLOB_RECURSE MSDFGEN_EXT_SOURCES RELATIVE ${CMAKE_SOURCE_DIR}/src/font_loaders/msdf "ext/*.cpp" "lib/*.cpp")
+
+
+project(ft2font)
+add_executable(ft2font src/font_loaders/ft2font.cpp "${CMAKE_SOURCE_DIR}/src/font_loaders/msdf/msdfgen.h") #${MSDFGEN_CORE_HEADERS} ${MSDFGEN_CORE_SOURCES} ${MSDFGEN_EXT_HEADERS} ${MSDFGEN_EXT_SOURCES})
+target_include_directories(ft2font PUBLIC src/font_loaders/freetype/include ${CMAKE_SOURCE_DIR}/src/font_loaders/msdf)
+target_link_libraries(ft2font PUBLIC ${CMAKE_SOURCE_DIR}/src/font_loaders/freetype/freetype.lib)
+target_compile_definitions(ft2font PUBLIC MSDFGEN_PUBLIC=)

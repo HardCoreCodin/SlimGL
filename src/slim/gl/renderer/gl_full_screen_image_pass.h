@@ -35,7 +35,7 @@ uniform sampler2D image;
 
 void main()
 {
-	out_color = vec4(vec3(texture(image, in_position.xy * 0.5f + 0.5f).r), 1.0f);
+	out_color = vec4(vec3(texture(image, in_position.xy * 0.5f + 0.5f)), 1.0f);
 }
 )FRAGMENT_SHADER";
 

@@ -423,7 +423,7 @@ namespace gl {
 						id, _type, _severity, _source, message);
 		}
 
-		void init(Scene &main_scene, CubeMapSet *cube_map_sets, u32 cube_map_sets_count, RawImage *texture_images, u32 texture_count, Text2D *static_texts = nullptr, u32 static_texts_count = 0, bool wireframe = false, bool normals = false) {
+		void init(Scene &main_scene, CubeMapSet *cube_map_sets, u32 cube_map_sets_count, RawImage *texture_images, u32 texture_count, Text *static_texts = nullptr, u32 static_texts_count = 0, bool wireframe = false, bool normals = false) {
 
 			glEnable(GL_DEBUG_OUTPUT);
 			glDebugMessageCallback(MessageCallback, 0);
@@ -527,9 +527,9 @@ namespace gl {
 			}
 
 			if (selection) drawSelection(*selection, view_projection_matrix, scene->meshes);
-
-			text_pass::render(0 , 0, viewport.dimensions.width, viewport.dimensions.height, textures[5], texts, texts_count);
-
+			text_pass::render2D(0 , 0, viewport.dimensions.width, viewport.dimensions.height, textures[5], texts, texts_count);
+			text_pass::render3D(0 , 0, viewport.dimensions.width, viewport.dimensions.height, view_projection_matrix, textures[5], texts, texts_count);
+			//full_screen_image_pass::draw(textures[5]);
 			glUseProgram(0);
 		}
 	}

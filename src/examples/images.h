@@ -22,7 +22,7 @@ const char *image_file_names[ImageCount] {
     "dog_albedo.raw_image",
     "dog_normal.raw_image",
     "font.raw_image",
-    "victormono_font.raw_image"
+    "arialbd.raw_image"
 };
 ImagePack<u8> image_pack{ImageCount, images, image_file_names, __FILE__};
 

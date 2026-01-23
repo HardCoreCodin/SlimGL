@@ -14,5 +14,5 @@ add_executable(stb2image src/image_loaders/stb2image.cpp)
 
 project(ft2font)
 add_executable(ft2font src/font_loaders/ft2font.cpp)
-target_include_directories(ft2font PUBLIC src/font_loaders/freetype/include)
-target_link_libraries(ft2font PUBLIC ${CMAKE_SOURCE_DIR}/src/font_loaders/freetype/freetype.lib)
+target_include_directories(ft2font PUBLIC ${CMAKE_SOURCE_DIR}/src/font_loaders ${CMAKE_SOURCE_DIR}/src/font_loaders/msdfgen)
+target_link_libraries(ft2font PUBLIC ${CMAKE_SOURCE_DIR}/src/font_loaders/freetype/freetype.lib  ${CMAKE_SOURCE_DIR}/src/font_loaders/msdfgen/msdfgen.lib  ${CMAKE_SOURCE_DIR}/src/font_loaders/msdfgen/msdf-atlas-gen.lib)

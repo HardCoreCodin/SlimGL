@@ -2,42 +2,51 @@
 
 #include "./base.h"
 #include "./string.h"
+#include "./transform.h"
 #include "./transform2d.h"
 
 
-struct Font
-{
+struct Font {
     struct GlyphMetric {
-        f32 ax; // advance.x
-        f32 ay; // advance.y
-
-        f32 bw; // bitmap.width;
-        f32 bh; // bitmap.rows;
-
-        f32 bl; // bitmap_left;
-        f32 bt; // bitmap_top;
-
-        f32 tx; // x offset of glyph in texture coordinates
+        vec2 pos;
+        vec2 size;
+        vec2 uv_pos;
+        vec2 uv_size;
+        vec2 advance;
     };
 
     u32 atlas_width;
     u32 atlas_height;
-    GlyphMetric metrics[128];
+    GlyphMetric metrics[256];
 };
 
 
-struct Text2D {
+struct Text {
     const Font& font;
     String string;
     Color color = White;
-    Transform2D transform = {};
+    Transform2D transform2D = {};
+    Transform transform3D = {};
+    bool is2D = true;
 
-    Text2D(const Font& font, const String &string, Color color = White, const Transform2D &transform = {})
+    Text(const Font& font, const String &string, Color color = White, const Transform2D &transform = {})
     :
         font{font},
         string{string},
         color{color},
-        transform{transform}
+        transform2D{transform},
+        transform3D{},
+        is2D{true}
+    {}
+
+    Text(const Font& font, const String &string, Color color = White, const Transform &transform = {})
+    :
+        font{font},
+        string{string},
+        color{color},
+        transform2D{},
+        transform3D{transform},
+        is2D{false}
     {}
 };
 
